@@ -1,7 +1,5 @@
 package com.mtg.mtgwalletbe.security;
 
-import com.mtg.mtgwalletbe.security.filter.CustomAuthenticationFilter;
-import com.mtg.mtgwalletbe.security.filter.CustomAuthorizationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,24 +11,16 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import static com.mtg.mtgwalletbe.security.SecurityParams.LOGIN_PATH;
-import static com.mtg.mtgwalletbe.security.SecurityParams.REFRESH_TOKEN_PATH;
 import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
 
-@Profile("!disabled-security")
+@Profile("disabled-security")
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
-public class SecurityConfig extends WebSecurityConfigurerAdapter {
+public class DisabledSecurityConfig extends WebSecurityConfigurerAdapter {
     private final UserDetailsService userDetailsService;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
-    private static final String[] AUTH_WHITELIST = {
-            LOGIN_PATH,
-            REFRESH_TOKEN_PATH,
-            "/api/user/save"
-    };
 
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
@@ -41,14 +31,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
         http.csrf().disable();
         http.sessionManagement().sessionCreationPolicy(STATELESS);
-        http.authorizeRequests().antMatchers(AUTH_WHITELIST).permitAll();
-        //---------------------------------------
-        // configurations here
-        // example: http.authorizeRequests().antMatchers(HttpMethod.GET, "/api/**").hasAnyAuthority("ROLE_USER");
-        //---------------------------------------
-        http.authorizeRequests().anyRequest().authenticated();
-        http.addFilter(new CustomAuthenticationFilter(authenticationManagerBean()));
-        http.addFilterBefore(new CustomAuthorizationFilter(), UsernamePasswordAuthenticationFilter.class);
+        http.authorizeRequests().anyRequest().permitAll();
     }
 
     @Bean
