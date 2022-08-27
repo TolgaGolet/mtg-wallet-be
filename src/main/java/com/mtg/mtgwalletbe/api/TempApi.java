@@ -1,0 +1,17 @@
+package com.mtg.mtgwalletbe.api;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/temp")
+@RequiredArgsConstructor
+public class TempApi {
+    @GetMapping("/get-temp")
+    public ResponseEntity<String> getTemp() {
+        return ResponseEntity.ok("success");
+    }
+}
