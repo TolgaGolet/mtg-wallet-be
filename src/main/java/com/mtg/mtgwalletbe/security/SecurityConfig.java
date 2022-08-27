@@ -38,7 +38,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         http.authorizeRequests().antMatchers(AUTH_WHITELIST).permitAll();
         //---------------------------------------
         // configurations here
-        // example: http.authorizeRequests().antMatchers(HttpMethod.GET, "/api/**").hasAnyAuthority("ROLE_USER");
+        // example: http.authorizeRequests().antMatchers(HttpMethod.GET, "path/**").hasAnyAuthority("ROLE_USER");
         //---------------------------------------
         http.authorizeRequests().anyRequest().authenticated();
         http.addFilter(new CustomAuthenticationFilter(authenticationManagerBean()));
