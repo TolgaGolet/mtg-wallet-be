@@ -15,8 +15,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import static com.mtg.mtgwalletbe.security.SecurityParams.LOGIN_PATH;
-import static com.mtg.mtgwalletbe.security.SecurityParams.REFRESH_TOKEN_PATH;
+import static com.mtg.mtgwalletbe.security.SecurityParams.AUTH_WHITELIST;
 import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
 
 @Profile("!disabled-security")
@@ -26,11 +25,6 @@ import static org.springframework.security.config.http.SessionCreationPolicy.STA
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
     private final UserDetailsService userDetailsService;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
-    private static final String[] AUTH_WHITELIST = {
-            LOGIN_PATH,
-            REFRESH_TOKEN_PATH,
-            "/api/user/save"
-    };
 
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
