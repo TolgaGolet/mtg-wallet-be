@@ -1,5 +1,6 @@
 package com.mtg.mtgwalletbe.entity;
 
+import com.mtg.mtgwalletbe.entity.auditing.Auditable;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -14,7 +15,7 @@ import java.util.Set;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class WalletUser {
+public class WalletUser extends Auditable {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
