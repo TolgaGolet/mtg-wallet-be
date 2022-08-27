@@ -18,8 +18,6 @@ import static com.mtg.mtgwalletbe.security.SecurityParams.LOGIN_PATH;
 import static com.mtg.mtgwalletbe.security.SecurityParams.REFRESH_TOKEN_PATH;
 import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
 
-// TODO deprecated WebSecurityConfigurerAdapter
-// https://spring.io/blog/2022/02/21/spring-security-without-the-websecurityconfigureradapter
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor

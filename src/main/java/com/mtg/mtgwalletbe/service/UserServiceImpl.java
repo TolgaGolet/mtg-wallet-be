@@ -22,7 +22,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.Collection;
 
-// TODO check transactional usage and use
 @Service
 @RequiredArgsConstructor
 @Transactional
