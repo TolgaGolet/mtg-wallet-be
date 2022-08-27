@@ -46,13 +46,13 @@ public class UserApi {
 
     @PostMapping("/user/save")
     public ResponseEntity<WalletUserResponse> saveUser(@RequestBody @Validated WalletUserRequest walletUserRequest) throws MtgWalletGenericException {
-        URI uri = URI.create(ServletUriComponentsBuilder.fromCurrentContextPath().path("/api/user/save").toUriString());
+        URI uri = URI.create(ServletUriComponentsBuilder.fromCurrentContextPath().path("/user/save").toUriString());
         return ResponseEntity.created(uri).body(userServiceMapper.toWalletUserResponse(userService.saveUser(userServiceMapper.toWalletUserDto(walletUserRequest))));
     }
 
     @PostMapping("/role/save")
     public ResponseEntity<RoleResponse> saveRole(@RequestBody @Validated RoleRequest roleRequest) throws MtgWalletGenericException {
-        URI uri = URI.create(ServletUriComponentsBuilder.fromCurrentContextPath().path("/api/role/save").toUriString());
+        URI uri = URI.create(ServletUriComponentsBuilder.fromCurrentContextPath().path("/role/save").toUriString());
         return ResponseEntity.created(uri).body(userServiceMapper.toRoleResponse(userService.saveRole(userServiceMapper.toRoleDto(roleRequest))));
     }
 
