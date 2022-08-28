@@ -9,6 +9,7 @@ import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -18,6 +19,7 @@ import java.util.Set;
 public class WalletUser extends Auditable {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(unique = true, updatable = false)
     private Long id;
     @NotNull
     @Size(min = 3, max = 15)
@@ -31,4 +33,6 @@ public class WalletUser extends Auditable {
     private String password;
     @ManyToMany(fetch = FetchType.EAGER)
     private Set<Role> roles = new HashSet<>();
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<Account> accounts;
 }
