@@ -87,4 +87,11 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         }
         return !Objects.equals(authentication.getName(), "anonymousUser") ? Optional.ofNullable(authentication.getName()) : Optional.empty();
     }
+
+    @Override
+    public WalletUserDto updateUser(WalletUserDto walletUserDto) throws MtgWalletGenericException {
+        WalletUser walletUser = walletUserRepository.findByUsername(walletUserDto.getUsername()).orElseThrow(() -> new UsernameNotFoundException(GenericExceptionMessages.USER_NOT_FOUND.getMessage()));
+        mapper.updateWalletUserFromDto(walletUserDto, walletUser);
+        return mapper.toWalletUserDto(walletUserRepository.save(walletUser));
+    }
 }

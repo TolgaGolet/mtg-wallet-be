@@ -1,5 +1,6 @@
 package com.mtg.mtgwalletbe.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.mtg.mtgwalletbe.entity.auditing.Auditable;
 import lombok.*;
 
@@ -45,4 +46,16 @@ public class WalletUser extends Auditable {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private List<Category> categories;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "default_payee_id_for_expense")
+    @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private Payee defaultPayeeForExpense;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "default_payee_id_for_income")
+    @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private Payee defaultPayeeForIncome;
 }
