@@ -9,6 +9,7 @@ import com.mtg.mtgwalletbe.entity.WalletUser;
 import com.mtg.mtgwalletbe.service.dto.RoleDto;
 import com.mtg.mtgwalletbe.service.dto.WalletUserDto;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface UserServiceMapper {
@@ -20,6 +21,7 @@ public interface UserServiceMapper {
 
     RoleDto toRoleDto(Role role);
 
+    @Mapping(source = "id", target = "userId")
     WalletUserResponse toWalletUserResponse(WalletUserDto walletUserDto);
 
     WalletUserDto toWalletUserDto(WalletUserRequest walletUserRequest);

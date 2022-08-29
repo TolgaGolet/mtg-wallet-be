@@ -1,14 +1,13 @@
 package com.mtg.mtgwalletbe.entity;
 
 import com.mtg.mtgwalletbe.entity.auditing.Auditable;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -18,6 +17,7 @@ import java.util.Set;
 public class WalletUser extends Auditable {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(unique = true, updatable = false)
     private Long id;
     @NotNull
     @Size(min = 3, max = 15)
@@ -30,5 +30,19 @@ public class WalletUser extends Auditable {
     @NotNull
     private String password;
     @ManyToMany(fetch = FetchType.EAGER)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Set<Role> roles = new HashSet<>();
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<Account> accounts;
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<Payee> payees;
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<Category> categories;
 }

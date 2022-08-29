@@ -38,22 +38,23 @@ import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
+// TODO authorization checks on methods. Ex: who can addRoleToUser
 @RestController
 @RequiredArgsConstructor
 public class UserApi {
     private final UserService userService;
     private final UserServiceMapper userServiceMapper;
 
-    @PostMapping("/user/save")
-    public ResponseEntity<WalletUserResponse> saveUser(@RequestBody @Validated WalletUserRequest walletUserRequest) throws MtgWalletGenericException {
-        URI uri = URI.create(ServletUriComponentsBuilder.fromCurrentContextPath().path("/user/save").toUriString());
-        return ResponseEntity.created(uri).body(userServiceMapper.toWalletUserResponse(userService.saveUser(userServiceMapper.toWalletUserDto(walletUserRequest))));
+    @PostMapping("/user/create")
+    public ResponseEntity<WalletUserResponse> createUser(@RequestBody @Validated WalletUserRequest walletUserRequest) throws MtgWalletGenericException {
+        URI uri = URI.create(ServletUriComponentsBuilder.fromCurrentContextPath().path("/user/create").toUriString());
+        return ResponseEntity.created(uri).body(userServiceMapper.toWalletUserResponse(userService.createUser(userServiceMapper.toWalletUserDto(walletUserRequest))));
     }
 
-    @PostMapping("/role/save")
-    public ResponseEntity<RoleResponse> saveRole(@RequestBody @Validated RoleRequest roleRequest) throws MtgWalletGenericException {
-        URI uri = URI.create(ServletUriComponentsBuilder.fromCurrentContextPath().path("/role/save").toUriString());
-        return ResponseEntity.created(uri).body(userServiceMapper.toRoleResponse(userService.saveRole(userServiceMapper.toRoleDto(roleRequest))));
+    @PostMapping("/role/create")
+    public ResponseEntity<RoleResponse> createRole(@RequestBody @Validated RoleRequest roleRequest) throws MtgWalletGenericException {
+        URI uri = URI.create(ServletUriComponentsBuilder.fromCurrentContextPath().path("/role/create").toUriString());
+        return ResponseEntity.created(uri).body(userServiceMapper.toRoleResponse(userService.createRole(userServiceMapper.toRoleDto(roleRequest))));
     }
 
     @PostMapping("/user/add-role-to-user")

@@ -4,17 +4,21 @@ import lombok.Data;
 
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import java.math.BigDecimal;
 
 @Data
-public class WalletUserRequest {
+public class AccountCreateRequest {
     @NotNull
     @Size(min = 3, max = 15)
     private String username;
     @NotNull
-    @Size(min = 3, max = 15)
+    @Size(min = 3, max = 50)
     private String name;
-    private String surname;
     @NotNull
-    @Size(min = 4, max = 30)
-    private String password;
+    @Size(min = 1, max = 15)
+    private String typeKey;
+    private BigDecimal balance;
+    @NotNull
+    @Size(min = 1, max = 3)
+    private String currencyKey;
 }
