@@ -7,12 +7,12 @@ import javax.validation.constraints.Size;
 import java.math.BigDecimal;
 
 @Data
-public class AccountSaveRequest {
+public class AccountCreateRequest {
     @NotNull
     @Size(min = 3, max = 15)
     private String username;
     @NotNull
-    @Size(min = 3, max = 15)
+    @Size(min = 3, max = 50)
     private String name;
     @NotNull
     @Size(min = 1, max = 15)

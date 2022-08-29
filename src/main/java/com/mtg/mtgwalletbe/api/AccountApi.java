@@ -1,7 +1,7 @@
 package com.mtg.mtgwalletbe.api;
 
-import com.mtg.mtgwalletbe.api.request.AccountSaveRequest;
-import com.mtg.mtgwalletbe.api.response.AccountSaveResponse;
+import com.mtg.mtgwalletbe.api.request.AccountCreateRequest;
+import com.mtg.mtgwalletbe.api.response.AccountCreateResponse;
 import com.mtg.mtgwalletbe.mapper.AccountServiceMapper;
 import com.mtg.mtgwalletbe.service.AccountService;
 import lombok.RequiredArgsConstructor;
@@ -22,9 +22,9 @@ public class AccountApi {
     private final AccountService accountService;
     private final AccountServiceMapper accountServiceMapper;
 
-    @PostMapping("/save")
-    public ResponseEntity<AccountSaveResponse> save(@RequestBody @Validated AccountSaveRequest accountSaveRequest) {
-        URI uri = URI.create(ServletUriComponentsBuilder.fromCurrentContextPath().path("/user/save").toUriString());
-        return ResponseEntity.created(uri).body(accountServiceMapper.toAccountSaveResponse(accountService.save(accountSaveRequest)));
+    @PostMapping("/create")
+    public ResponseEntity<AccountCreateResponse> create(@RequestBody @Validated AccountCreateRequest accountCreateRequest) {
+        URI uri = URI.create(ServletUriComponentsBuilder.fromCurrentContextPath().path("/user/create").toUriString());
+        return ResponseEntity.created(uri).body(accountServiceMapper.toAccountCreateResponse(accountService.create(accountCreateRequest)));
     }
 }

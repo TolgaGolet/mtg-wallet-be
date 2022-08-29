@@ -15,6 +15,6 @@ public class WalletUserRequest {
     private String name;
     private String surname;
     @NotNull
-    @Size(min = 4, max = 15)
+    @Size(min = 4, max = 30)
     private String password;
 }

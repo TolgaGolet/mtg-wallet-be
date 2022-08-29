@@ -1,6 +1,8 @@
 package com.mtg.mtgwalletbe.service.dto;
 
 import com.mtg.mtgwalletbe.entity.Account;
+import com.mtg.mtgwalletbe.entity.Category;
+import com.mtg.mtgwalletbe.entity.Payee;
 import com.mtg.mtgwalletbe.entity.Role;
 import lombok.Data;
 
@@ -18,4 +20,6 @@ public class WalletUserDto {
     private String password;
     private Set<Role> roles = new HashSet<>();
     private List<Account> accounts = new ArrayList<>();
+    private List<Payee> payees = new ArrayList<>();
+    private List<Category> categories = new ArrayList<>();
 }

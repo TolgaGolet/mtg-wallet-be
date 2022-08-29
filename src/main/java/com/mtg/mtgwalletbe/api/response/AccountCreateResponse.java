@@ -11,8 +11,8 @@ import java.math.BigDecimal;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class AccountSaveResponse {
-    private Long id;
+public class AccountCreateResponse {
+    private Long accountId;
     private String username;
     private String name;
     private AccountType type;
