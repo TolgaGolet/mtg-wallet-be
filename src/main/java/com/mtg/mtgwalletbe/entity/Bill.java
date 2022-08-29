@@ -1,0 +1,34 @@
+package com.mtg.mtgwalletbe.entity;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.mtg.mtgwalletbe.entity.auditing.Auditable;
+import com.mtg.mtgwalletbe.enums.RecurrenceType;
+import lombok.*;
+
+import javax.persistence.*;
+import javax.validation.constraints.NotNull;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+@Entity
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class Bill extends Auditable {
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(unique = true, updatable = false)
+    private Long id;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "payee_id", nullable = false)
+    @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private Payee payee;
+    @NotNull
+    private BigDecimal amount;
+    @NotNull
+    private LocalDateTime nextPaymentDateTime;
+    @NotNull
+    private RecurrenceType recurrenceType;
+}
