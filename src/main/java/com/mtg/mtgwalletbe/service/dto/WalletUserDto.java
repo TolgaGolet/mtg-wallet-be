@@ -22,4 +22,6 @@ public class WalletUserDto {
     private List<Account> accounts = new ArrayList<>();
     private List<Payee> payees = new ArrayList<>();
     private List<Category> categories = new ArrayList<>();
+    private Payee defaultPayeeForExpense;
+    private Payee defaultPayeeForIncome;
 }

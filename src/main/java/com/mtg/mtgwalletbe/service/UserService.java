@@ -16,4 +16,6 @@ public interface UserService {
     WalletUserDto getUser(String username);
 
     public Optional<String> getCurrentLoggedInUsername();
+
+    WalletUserDto updateUser(WalletUserDto walletUserDto) throws MtgWalletGenericException;
 }

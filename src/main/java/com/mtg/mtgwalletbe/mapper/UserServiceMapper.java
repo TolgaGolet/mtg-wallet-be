@@ -3,13 +3,14 @@ package com.mtg.mtgwalletbe.mapper;
 import com.mtg.mtgwalletbe.api.request.RoleRequest;
 import com.mtg.mtgwalletbe.api.request.WalletUserRequest;
 import com.mtg.mtgwalletbe.api.response.RoleResponse;
-import com.mtg.mtgwalletbe.api.response.WalletUserResponse;
+import com.mtg.mtgwalletbe.api.response.WalletUserCreateResponse;
 import com.mtg.mtgwalletbe.entity.Role;
 import com.mtg.mtgwalletbe.entity.WalletUser;
 import com.mtg.mtgwalletbe.service.dto.RoleDto;
 import com.mtg.mtgwalletbe.service.dto.WalletUserDto;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 
 @Mapper(componentModel = "spring")
 public interface UserServiceMapper {
@@ -22,11 +23,13 @@ public interface UserServiceMapper {
     RoleDto toRoleDto(Role role);
 
     @Mapping(source = "id", target = "userId")
-    WalletUserResponse toWalletUserResponse(WalletUserDto walletUserDto);
+    WalletUserCreateResponse toWalletUserCreateResponse(WalletUserDto walletUserDto);
 
     WalletUserDto toWalletUserDto(WalletUserRequest walletUserRequest);
 
     RoleResponse toRoleResponse(RoleDto roleDto);
 
     RoleDto toRoleDto(RoleRequest roleRequest);
+
+    void updateWalletUserFromDto(WalletUserDto dto, @MappingTarget WalletUser entity);
 }

@@ -8,7 +8,7 @@ import com.mtg.mtgwalletbe.api.request.AddRoleToUserRequest;
 import com.mtg.mtgwalletbe.api.request.RoleRequest;
 import com.mtg.mtgwalletbe.api.request.WalletUserRequest;
 import com.mtg.mtgwalletbe.api.response.RoleResponse;
-import com.mtg.mtgwalletbe.api.response.WalletUserResponse;
+import com.mtg.mtgwalletbe.api.response.WalletUserCreateResponse;
 import com.mtg.mtgwalletbe.entity.Role;
 import com.mtg.mtgwalletbe.exception.MtgWalletGenericException;
 import com.mtg.mtgwalletbe.exception.enums.GenericExceptionMessages;
@@ -46,9 +46,9 @@ public class UserApi {
     private final UserServiceMapper userServiceMapper;
 
     @PostMapping("/user/create")
-    public ResponseEntity<WalletUserResponse> createUser(@RequestBody @Validated WalletUserRequest walletUserRequest) throws MtgWalletGenericException {
+    public ResponseEntity<WalletUserCreateResponse> createUser(@RequestBody @Validated WalletUserRequest walletUserRequest) throws MtgWalletGenericException {
         URI uri = URI.create(ServletUriComponentsBuilder.fromCurrentContextPath().path("/user/create").toUriString());
-        return ResponseEntity.created(uri).body(userServiceMapper.toWalletUserResponse(userService.createUser(userServiceMapper.toWalletUserDto(walletUserRequest))));
+        return ResponseEntity.created(uri).body(userServiceMapper.toWalletUserCreateResponse(userService.createUser(userServiceMapper.toWalletUserDto(walletUserRequest))));
     }
 
     @PostMapping("/role/create")

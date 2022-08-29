@@ -16,7 +16,8 @@ public enum GenericExceptionMessages {
     CATEGORY_NOT_FOUND("Category not found"),
     TARGET_ACCOUNT_ID_CANT_BE_EMPTY_FOR_TRANSFERS("Target account id can't be empty for transfer transactions"),
     TARGET_ACCOUNT_ID_SHOULD_BE_EMPTY_FOR_EXPENSES_AND_INCOMES("Target account id should be empty for expense and income transactions"),
-    SOURCE_ACCOUNT_ID_CANT_BE_THE_SAME_AS_TARGET_ACCOUNT_ID("Source account id can't be the same as target account id");
+    SOURCE_ACCOUNT_ID_CANT_BE_THE_SAME_AS_TARGET_ACCOUNT_ID("Source account id can't be the same as target account id"),
+    PAYEE_CATEGORY_TRANSACTION_TYPE_NOT_VALID("Payee category transaction type not valid");
 
     private final String message;
 }

@@ -8,4 +8,8 @@ public interface PayeeService {
     PayeeDto create(PayeeCreateRequest payeeCreateRequest) throws MtgWalletGenericException;
 
     public PayeeDto getPayee(Long id);
+
+    void addDefaultPayeeForExpenseToUser(String username, Long payeeId) throws MtgWalletGenericException;
+
+    void addDefaultPayeeForIncomeToUser(String username, Long payeeId) throws MtgWalletGenericException;
 }
