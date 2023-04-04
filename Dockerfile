@@ -1,6 +1,6 @@
 FROM maven:3.8.6-jdk-11 AS build
 COPY . .
-RUN mvn clean package -Pprod -DskipTests
+RUN mvn clean package -DskipTests
 
 FROM openjdk:11-jdk-slim
 VOLUME /tmp
