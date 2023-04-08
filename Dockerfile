@@ -5,5 +5,5 @@ RUN mvn clean package -DskipTests
 FROM openjdk:11-jdk-slim
 COPY --from=build /target/mtg-wallet-be-0.0.1-SNAPSHOT.jar mtg-wallet-be.jar
 
-EXPOSE 8080
+EXPOSE $PORT
 ENTRYPOINT ["java","-jar","mtg-wallet-be.jar"]
