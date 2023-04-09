@@ -16,7 +16,7 @@ public class SecurityParams {
     public static final String[] AUTH_WHITELIST = {
             LOGIN_PATH,
             REFRESH_TOKEN_PATH,
-            "/user/save"
+            "/user/create"
     };
 
     private SecurityParams() {
