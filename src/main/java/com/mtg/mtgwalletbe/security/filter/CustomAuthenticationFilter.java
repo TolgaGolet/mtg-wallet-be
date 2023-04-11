@@ -1,7 +1,9 @@
 package com.mtg.mtgwalletbe.security.filter;
 
 import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mtg.mtgwalletbe.security.dto.CustomAuthenticationFilterConstructorDTO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -27,9 +29,15 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 @Slf4j
 public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
     private final AuthenticationManager authenticationManager;
+    private final String jwtSecretKey;
+    private final int jwtAccessTokenExpirationDuration;
+    private final int jwtRefreshTokenExpirationDuration;
 
-    public CustomAuthenticationFilter(AuthenticationManager authenticationManager) {
-        this.authenticationManager = authenticationManager;
+    public CustomAuthenticationFilter(CustomAuthenticationFilterConstructorDTO customAuthenticationFilterConstructorDTO) {
+        this.authenticationManager = customAuthenticationFilterConstructorDTO.getAuthenticationManager();
+        this.jwtSecretKey = customAuthenticationFilterConstructorDTO.getJwtSecretKey();
+        this.jwtAccessTokenExpirationDuration = customAuthenticationFilterConstructorDTO.getJwtAccessTokenExpirationDuration();
+        this.jwtRefreshTokenExpirationDuration = customAuthenticationFilterConstructorDTO.getJwtRefreshTokenExpirationDuration();
     }
 
     @Override
@@ -43,17 +51,19 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authentication) throws IOException, ServletException {
         User user = (User) authentication.getPrincipal();
+        Algorithm algorithm = Algorithm.HMAC256(jwtSecretKey.getBytes());
         String accessToken = JWT.create()
                 .withSubject(user.getUsername())
-                .withExpiresAt(new Date(System.currentTimeMillis() + JWT_ACCESS_TOKEN_EXPIRATION_DURATION * 60 * 1000))
+                .withExpiresAt(new Date(System.currentTimeMillis() + jwtAccessTokenExpirationDuration * 60 * 1000))
                 .withIssuer(request.getRequestURL().toString())
-                .withClaim(JWT_TOKEN_CLAIM_KEY, user.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList()))
-                .sign(JWT_SIGNING_ALGORITHM);
+                .withClaim(JWT_TOKEN_ROLES_CLAIM_KEY, user.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList()))
+                .withClaim(JWT_TOKEN_USERNAME_CLAIM_KEY, user.getUsername())
+                .sign(algorithm);
         String refreshToken = JWT.create()
                 .withSubject(user.getUsername())
-                .withExpiresAt(new Date(System.currentTimeMillis() + JWT_REFRESH_TOKEN_EXPIRATION_DURATION * 60 * 1000))
+                .withExpiresAt(new Date(System.currentTimeMillis() + jwtRefreshTokenExpirationDuration * 60 * 1000))
                 .withIssuer(request.getRequestURL().toString())
-                .sign(JWT_SIGNING_ALGORITHM);
+                .sign(algorithm);
         Map<String, String> tokens = new HashMap<>();
         tokens.put(JWT_ACCESS_TOKEN_KEY, accessToken);
         tokens.put(JWT_REFRESH_TOKEN_KEY, refreshToken);

@@ -2,6 +2,7 @@ package com.mtg.mtgwalletbe.api;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
+import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mtg.mtgwalletbe.api.request.AddRoleToUserRequest;
@@ -16,6 +17,7 @@ import com.mtg.mtgwalletbe.mapper.UserServiceMapper;
 import com.mtg.mtgwalletbe.service.UserService;
 import com.mtg.mtgwalletbe.service.dto.WalletUserDto;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -44,6 +46,10 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 public class UserApi {
     private final UserService userService;
     private final UserServiceMapper userServiceMapper;
+    @Value("${mtgWallet.security.jwtSecretKey}")
+    private String jwtSecretKey;
+    @Value("${mtgWallet.security.jwtAccessTokenExpirationDuration}")
+    private int jwtAccessTokenExpirationDuration;
 
     @PostMapping("/user/create")
     public ResponseEntity<WalletUserCreateResponse> createUser(@RequestBody @Validated WalletUserRequest walletUserRequest) throws MtgWalletGenericException {
@@ -69,19 +75,20 @@ public class UserApi {
         if (authorizationHeader != null && authorizationHeader.startsWith(BEARER_PREFIX)) {
             try {
                 String refreshToken = authorizationHeader.substring(BEARER_PREFIX.length());
-                JWTVerifier verifier = JWT.require(JWT_SIGNING_ALGORITHM).build();
+                Algorithm algorithm = Algorithm.HMAC256(jwtSecretKey.getBytes());
+                JWTVerifier verifier = JWT.require(algorithm).build();
                 DecodedJWT decodedJWT = verifier.verify(refreshToken);
                 String username = decodedJWT.getSubject();
                 WalletUserDto walletUserDto = userService.getUser(username);
                 String accessToken = JWT.create()
                         .withSubject(walletUserDto.getUsername())
-                        .withExpiresAt(new Date(System.currentTimeMillis() + JWT_ACCESS_TOKEN_EXPIRATION_DURATION * 60 * 1000))
+                        .withExpiresAt(new Date(System.currentTimeMillis() + jwtAccessTokenExpirationDuration * 60 * 1000))
                         .withIssuer(request.getRequestURL().toString())
-                        .withClaim(JWT_TOKEN_CLAIM_KEY, walletUserDto.getRoles().stream().map(Role::getName).collect(Collectors.toList()))
-                        .sign(JWT_SIGNING_ALGORITHM);
+                        .withClaim(JWT_TOKEN_ROLES_CLAIM_KEY, walletUserDto.getRoles().stream().map(Role::getName).collect(Collectors.toList()))
+                        .withClaim(JWT_TOKEN_USERNAME_CLAIM_KEY, walletUserDto.getUsername())
+                        .sign(algorithm);
                 Map<String, String> tokens = new HashMap<>();
                 tokens.put(JWT_ACCESS_TOKEN_KEY, accessToken);
-                tokens.put(JWT_REFRESH_TOKEN_KEY, refreshToken);
                 response.setContentType(APPLICATION_JSON_VALUE);
                 new ObjectMapper().writeValue(response.getOutputStream(), tokens);
             } catch (Exception e) {
