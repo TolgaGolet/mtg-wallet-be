@@ -2,6 +2,7 @@ package com.mtg.mtgwalletbe.security.filter;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
+import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +29,12 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @Slf4j
 public class CustomAuthorizationFilter extends OncePerRequestFilter {
+    private final String jwtSecretKey;
+
+    public CustomAuthorizationFilter(String jwtSecretKey) {
+        this.jwtSecretKey = jwtSecretKey;
+    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         if (request.getServletPath().equals(LOGIN_PATH) || request.getServletPath().equals(REFRESH_TOKEN_PATH)) {
@@ -37,10 +44,11 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
             if (authorizationHeader != null && authorizationHeader.startsWith(BEARER_PREFIX)) {
                 try {
                     String token = authorizationHeader.substring(BEARER_PREFIX.length());
-                    JWTVerifier verifier = JWT.require(JWT_SIGNING_ALGORITHM).build();
+                    Algorithm algorithm = Algorithm.HMAC256(jwtSecretKey.getBytes());
+                    JWTVerifier verifier = JWT.require(algorithm).build();
                     DecodedJWT decodedJWT = verifier.verify(token);
                     String username = decodedJWT.getSubject();
-                    String[] roles = decodedJWT.getClaim(JWT_TOKEN_CLAIM_KEY).asArray(String.class);
+                    String[] roles = decodedJWT.getClaim(JWT_TOKEN_ROLES_CLAIM_KEY).asArray(String.class);
                     Collection<SimpleGrantedAuthority> authorities = new ArrayList<>();
                     stream(roles).forEach(role -> authorities.add(new SimpleGrantedAuthority(role)));
                     UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username, null, authorities);
