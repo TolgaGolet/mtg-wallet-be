@@ -1,5 +1,11 @@
 FROM openjdk:21-jdk-slim AS build
 
+# Install Maven
+RUN apt-get update \
+    && apt-get install -y maven \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
 # Copy the application code
 COPY . .
 
