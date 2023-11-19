@@ -6,6 +6,9 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum GenericExceptionMessages {
+    AUTHORIZATION_HEADER_MISSING("Authorization header is missing"),
+    JWT_SUBJECT_MISSING("JWT subject is missing"),
+    JWT_NOT_VALID("JWT is not valid"),
     USER_NOT_FOUND("User not found"),
     ROLE_NOT_FOUND("Role not found"),
     USERNAME_ALREADY_EXISTS("Username already exists"),

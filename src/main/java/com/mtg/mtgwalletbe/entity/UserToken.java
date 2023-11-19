@@ -2,37 +2,37 @@ package com.mtg.mtgwalletbe.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.mtg.mtgwalletbe.entity.auditing.Auditable;
-import com.mtg.mtgwalletbe.enums.TransactionType;
+import com.mtg.mtgwalletbe.enums.TokenType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import lombok.*;
 
-@Entity
+// TODO should delete older usertokens?
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Category extends Auditable {
+@Entity
+// TODO add indexes like this where needed
+@Table(name = "user_token", indexes = {
+        @Index(name = "userIdIndex", columnList = "user_id")
+})
+public class UserToken extends Auditable {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(unique = true, updatable = false)
     private Long id;
     @NotNull
-    @Size(min = 3, max = 50)
-    private String name;
-    // TODO check enumerated annotation istead of converters
-    @NotNull
-    private TransactionType transactionType;
+    @Column(unique = true)
+    public String token;
+    @Enumerated(EnumType.STRING)
+    public TokenType tokenType = TokenType.BEARER;
+    public boolean revoked;
+    public boolean expired;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private WalletUser user;
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "parent_category_id")
-    @JsonIgnore
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    private Category parentCategory;
+    public WalletUser user;
 }

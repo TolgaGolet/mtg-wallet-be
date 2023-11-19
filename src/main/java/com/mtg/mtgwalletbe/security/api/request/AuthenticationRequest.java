@@ -1,4 +1,4 @@
-package com.mtg.mtgwalletbe.api.request;
+package com.mtg.mtgwalletbe.security.api.request;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -11,14 +11,10 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class WalletUserRequest {
+public class AuthenticationRequest {
     @NotNull
     @Size(min = 3, max = 15)
     private String username;
-    @NotNull
-    @Size(min = 3, max = 15)
-    private String name;
-    private String surname;
     @NotNull
     @Size(min = 4, max = 30)
     private String password;

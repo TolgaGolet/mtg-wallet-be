@@ -3,10 +3,10 @@ package com.mtg.mtgwalletbe.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.mtg.mtgwalletbe.entity.auditing.Auditable;
 import com.mtg.mtgwalletbe.enums.TransactionType;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
-import javax.persistence.*;
-import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
