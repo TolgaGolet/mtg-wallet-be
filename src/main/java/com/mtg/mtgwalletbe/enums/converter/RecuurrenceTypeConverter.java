@@ -1,12 +1,13 @@
 package com.mtg.mtgwalletbe.enums.converter;
 
 import com.mtg.mtgwalletbe.enums.RecurrenceType;
+import jakarta.persistence.AttributeConverter;
+import jakarta.persistence.Converter;
 
-import javax.persistence.AttributeConverter;
-import javax.persistence.Converter;
 import java.util.Objects;
 import java.util.stream.Stream;
 
+// TODO fix the typo
 @Converter(autoApply = true)
 public class RecuurrenceTypeConverter implements AttributeConverter<RecurrenceType, String> {
     @Override

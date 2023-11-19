@@ -1,9 +1,19 @@
-FROM maven:3.8.6-jdk-11 AS build
+FROM openjdk:21-jdk-slim AS build
+
+# Copy the application code
 COPY . .
+
+# Build the application with Maven
 RUN mvn clean package -DskipTests
 
-FROM openjdk:11-jdk-slim
+# Use the openjdk 21 image as the base for the final image
+FROM openjdk:21-jdk-slim
+
+# Copy the built JAR file from the build image
 COPY --from=build /target/mtg-wallet-be-0.0.1-SNAPSHOT.jar mtg-wallet-be.jar
 
+# Expose the port
 EXPOSE 8080
+
+# Set the entry point for the application
 ENTRYPOINT ["java","-jar","mtg-wallet-be.jar"]

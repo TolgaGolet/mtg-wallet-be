@@ -1,9 +1,9 @@
 package com.mtg.mtgwalletbe.enums.converter;
 
 import com.mtg.mtgwalletbe.enums.AccountType;
+import jakarta.persistence.AttributeConverter;
+import jakarta.persistence.Converter;
 
-import javax.persistence.AttributeConverter;
-import javax.persistence.Converter;
 import java.util.Objects;
 import java.util.stream.Stream;
 
