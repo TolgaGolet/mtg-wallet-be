@@ -1,5 +1,6 @@
 package com.mtg.mtgwalletbe.service;
 
+import com.mtg.mtgwalletbe.annotation.Loggable;
 import com.mtg.mtgwalletbe.api.request.ChangePasswordRequest;
 import com.mtg.mtgwalletbe.entity.Role;
 import com.mtg.mtgwalletbe.entity.WalletUser;
@@ -48,6 +49,7 @@ public class UserServiceImpl implements UserService {
         walletUserRepository.save(walletUser);
     }
 
+    @Loggable
     @Override
     public WalletUserDto getUser(String username) {
         WalletUser walletUser = walletUserRepository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException(GenericExceptionMessages.USER_NOT_FOUND.getMessage()));

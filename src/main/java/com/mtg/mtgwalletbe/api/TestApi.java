@@ -1,5 +1,6 @@
 package com.mtg.mtgwalletbe.api;
 
+import com.mtg.mtgwalletbe.annotation.Loggable;
 import com.mtg.mtgwalletbe.service.UserService;
 import com.mtg.mtgwalletbe.service.dto.WalletUserDto;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class TestApi {
     private final UserService userService;
 
+    @Loggable
     @GetMapping("/get-message")
     public ResponseEntity<String> getMessage() {
         return ResponseEntity.ok("success");
