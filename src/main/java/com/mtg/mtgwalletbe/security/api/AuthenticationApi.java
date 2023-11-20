@@ -32,8 +32,16 @@ public class AuthenticationApi {
     }
 
     @PostMapping("/authenticate")
-    public ResponseEntity<AuthenticationResponse> authenticate(@RequestBody AuthenticationRequest request) {
-        return ResponseEntity.ok(authenticationService.authenticate(request));
+    public ResponseEntity<AuthenticationResponse> authenticate(@RequestBody AuthenticationRequest request) throws MtgWalletGenericException {
+        try {
+            return ResponseEntity.ok(authenticationService.authenticate(request));
+        } catch (MtgWalletGenericException e) {
+            if (GenericExceptionMessages.BAD_USERNAME_OR_PASSWORD.getMessage().equals(e.getMessage())) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            } else {
+                throw e;
+            }
+        }
     }
 
     @PostMapping("/refresh-token")

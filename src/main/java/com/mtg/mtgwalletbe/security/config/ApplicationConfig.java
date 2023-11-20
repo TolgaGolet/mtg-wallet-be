@@ -3,6 +3,7 @@ package com.mtg.mtgwalletbe.security.config;
 import com.mtg.mtgwalletbe.exception.enums.GenericExceptionMessages;
 import com.mtg.mtgwalletbe.repository.WalletUserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -14,9 +15,13 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.TimeZone;
+
 @Configuration
 @RequiredArgsConstructor
 public class ApplicationConfig {
+    @Value("${mtgWallet.applicationConfig.timeZone}")
+    private String timeZone;
     private final WalletUserRepository walletUserRepository;
 
     @Bean
@@ -41,5 +46,10 @@ public class ApplicationConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public TimeZone timeZone() {
+        return TimeZone.getTimeZone(timeZone);
     }
 }
