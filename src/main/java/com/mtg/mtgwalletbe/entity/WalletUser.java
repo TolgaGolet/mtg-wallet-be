@@ -67,8 +67,7 @@ public class WalletUser extends Auditable implements UserDetails {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Payee defaultPayeeForIncome;
-
-    // TODO test roles
+    
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return this.roles;
