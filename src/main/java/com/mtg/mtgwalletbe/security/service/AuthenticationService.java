@@ -10,6 +10,7 @@ import com.mtg.mtgwalletbe.repository.WalletUserRepository;
 import com.mtg.mtgwalletbe.security.api.request.AuthenticationRequest;
 import com.mtg.mtgwalletbe.security.api.request.RegisterRequest;
 import com.mtg.mtgwalletbe.security.api.response.AuthenticationResponse;
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -20,8 +21,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import java.io.IOException;
 
 import static com.mtg.mtgwalletbe.security.SecurityParams.BEARER_PREFIX;
 
@@ -101,7 +100,7 @@ public class AuthenticationService {
         userTokenRepository.saveAll(validUserTokens);
     }
 
-    public AuthenticationResponse refreshToken(HttpServletRequest request, HttpServletResponse response) throws IOException, MtgWalletGenericException {
+    public AuthenticationResponse refreshToken(HttpServletRequest request, HttpServletResponse response) throws MtgWalletGenericException {
         final String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
         final String refreshToken;
         final String username;
@@ -109,7 +108,11 @@ public class AuthenticationService {
             throw new MtgWalletGenericException(GenericExceptionMessages.AUTHORIZATION_HEADER_MISSING.getMessage());
         }
         refreshToken = authHeader.substring(7);
-        username = jwtService.extractUsername(refreshToken);
+        try {
+            username = jwtService.extractUsername(refreshToken);
+        } catch (ExpiredJwtException e) {
+            throw new MtgWalletGenericException(GenericExceptionMessages.JWT_EXPIRED.getMessage());
+        }
         if (username == null) {
             throw new MtgWalletGenericException(GenericExceptionMessages.JWT_SUBJECT_MISSING.getMessage());
         }

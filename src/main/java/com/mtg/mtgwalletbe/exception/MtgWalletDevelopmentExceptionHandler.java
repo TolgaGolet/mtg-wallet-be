@@ -1,4 +1,4 @@
-package com.mtg.mtgwalletbe.exception.enums;
+package com.mtg.mtgwalletbe.exception;
 
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
