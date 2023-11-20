@@ -54,7 +54,7 @@ public class AuthenticationService {
                 .refreshToken(refreshToken)
                 .build();
     }
-    
+
     public AuthenticationResponse authenticate(AuthenticationRequest request) throws MtgWalletGenericException {
         try {
             authenticationManager.authenticate(
@@ -69,9 +69,6 @@ public class AuthenticationService {
         var user = walletUserRepository
                 .findByUsername(request.getUsername())
                 .orElseThrow(() -> new UsernameNotFoundException(GenericExceptionMessages.USER_NOT_FOUND.getMessage()));
-        // TODO can we get user roles from here. If not implement
-        // .withClaim(JWT_TOKEN_ROLES_CLAIM_KEY, user.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList()))
-        // .withClaim(JWT_TOKEN_USERNAME_CLAIM_KEY, user.getUsername())
         var jwtToken = jwtService.generateToken(user);
         var refreshToken = jwtService.generateRefreshToken(user);
         revokeAllUserTokens(user);
