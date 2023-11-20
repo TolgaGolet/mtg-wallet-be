@@ -10,6 +10,7 @@ public enum GenericExceptionMessages {
     JWT_SUBJECT_MISSING("Token subject is missing"),
     JWT_NOT_VALID("Token is not valid"),
     JWT_EXPIRED("Token is expired"),
+    BAD_USERNAME_OR_PASSWORD("Username or password is wrong"),
     USER_NOT_FOUND("User not found"),
     ROLE_NOT_FOUND("Role not found"),
     USERNAME_ALREADY_EXISTS("Username already exists"),
