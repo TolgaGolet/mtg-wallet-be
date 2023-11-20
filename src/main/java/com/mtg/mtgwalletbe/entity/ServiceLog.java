@@ -19,6 +19,8 @@ public class ServiceLog extends Auditable {
     @Column(unique = true, updatable = false)
     private Long id;
     private String serviceName;
+    @Size(max = 1)
+    private String status;
     @Size(max = 1000)
     private String request;
     @Size(max = 1000)

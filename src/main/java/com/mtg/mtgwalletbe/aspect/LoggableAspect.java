@@ -17,6 +17,8 @@ import java.util.Arrays;
 public class LoggableAspect {
 
     private final ServiceLogRepository serviceLogRepository;
+    private static final int MAX_CHARS_REQUEST = 1000;
+    private static final int MAX_CHARS_RESPONSE = 1000;
 
     @Pointcut("@annotation(com.mtg.mtgwalletbe.annotation.Loggable)")
     public void loggableMethods() {
@@ -27,21 +29,32 @@ public class LoggableAspect {
         String className = joinPoint.getTarget().getClass().getName();
         String methodName = joinPoint.getSignature().getName();
         Object[] args = joinPoint.getArgs();
+        String status = "S";
 
         long startTime = System.currentTimeMillis();
-        Object result = joinPoint.proceed();
-        long endTime = System.currentTimeMillis();
+        Object result = null;
 
-        ServiceLog serviceLog = ServiceLog.builder()
-                .serviceName(className + "." + methodName)
-                .request(args != null ? Arrays.toString(args) : null)
-                .response(result != null ? result.toString() : null)
-                .startTime(startTime)
-                .endTime(endTime)
-                .executionTime(endTime - startTime)
-                .build();
-        serviceLogRepository.save(serviceLog);
-
+        try {
+            result = joinPoint.proceed();
+        } catch (Throwable ex) {
+            status = "E";
+            result = ex.getMessage() + Arrays.toString(ex.getStackTrace());
+            throw ex;
+        } finally {
+            long endTime = System.currentTimeMillis();
+            String request = args != null ? Arrays.toString(args) : null;
+            String response = result != null ? result.toString() : null;
+            ServiceLog serviceLog = ServiceLog.builder()
+                    .serviceName(className + "." + methodName)
+                    .status(status)
+                    .request(request != null ? request.substring(0, Math.min(request.length(), MAX_CHARS_REQUEST)) : null)
+                    .response(response != null ? response.substring(0, Math.min(response.length(), MAX_CHARS_RESPONSE)) : null)
+                    .startTime(startTime)
+                    .endTime(endTime)
+                    .executionTime(endTime - startTime)
+                    .build();
+            serviceLogRepository.save(serviceLog);
+        }
         return result;
     }
 }
