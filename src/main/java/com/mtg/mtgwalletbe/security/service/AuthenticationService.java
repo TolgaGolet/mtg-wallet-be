@@ -22,6 +22,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import static com.mtg.mtgwalletbe.security.SecurityParams.BEARER_PREFIX;
 
@@ -34,6 +35,7 @@ public class AuthenticationService {
     private final UserTokenRepository userTokenRepository;
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
+    private static final Integer MAX_USER_TOKEN_COUNT = 5;
 
     public AuthenticationResponse register(RegisterRequest request) throws MtgWalletGenericException {
         if (walletUserRepository.findByUsername(request.getUsername()).isPresent()) {
@@ -41,6 +43,7 @@ public class AuthenticationService {
         }
         var user = WalletUser.builder()
                 .username(request.getUsername())
+                .email(request.getEmail())
                 .name(request.getName())
                 .surname(request.getSurname())
                 .password(passwordEncoder.encode(request.getPassword()))
@@ -55,6 +58,7 @@ public class AuthenticationService {
                 .build();
     }
 
+    @Transactional
     public AuthenticationResponse authenticate(AuthenticationRequest request) throws MtgWalletGenericException {
         try {
             authenticationManager.authenticate(
@@ -73,6 +77,7 @@ public class AuthenticationService {
         var refreshToken = jwtService.generateRefreshToken(user);
         revokeAllUserTokens(user);
         saveUserToken(user, jwtToken);
+        userTokenRepository.deleteOlderTokensOfUserByCount(user.getId(), MAX_USER_TOKEN_COUNT);
         return AuthenticationResponse.builder()
                 .accessToken(jwtToken)
                 .refreshToken(refreshToken)
@@ -126,6 +131,7 @@ public class AuthenticationService {
         var accessToken = jwtService.generateToken(user);
         revokeAllUserTokens(user);
         saveUserToken(user, accessToken);
+        userTokenRepository.deleteOlderTokensOfUserByCount(user.getId(), MAX_USER_TOKEN_COUNT);
         return AuthenticationResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
