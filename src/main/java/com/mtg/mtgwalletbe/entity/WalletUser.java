@@ -31,7 +31,7 @@ public class WalletUser extends Auditable implements UserDetails {
     @NotNull
     @Size(min = 3, max = 15)
     private String name;
-    @Size(min = 1, max = 15)
+    @Size(max = 15)
     private String surname;
     @NotNull
     private String password;
@@ -67,7 +67,7 @@ public class WalletUser extends Auditable implements UserDetails {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Payee defaultPayeeForIncome;
-    
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return this.roles;

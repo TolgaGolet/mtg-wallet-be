@@ -43,6 +43,9 @@ public class JwtService {
 
     private Map<String, Object> authoritiesToClaims(Collection<? extends GrantedAuthority> authorities) {
         Map<String, Object> claims = new HashMap<>();
+        if (authorities == null) {
+            return claims;
+        }
         claims.put("roles", authorities.stream().map(GrantedAuthority::getAuthority).toArray(String[]::new));
         return claims;
     }
