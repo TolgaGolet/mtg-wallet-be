@@ -18,6 +18,7 @@ public class RegisterRequest {
     @NotNull
     @Size(min = 3, max = 15)
     private String name;
+    @Size(max = 15)
     private String surname;
     @NotNull
     @Size(min = 4, max = 30)

@@ -28,7 +28,15 @@ public class AuthenticationApi {
     // TODO changing mapper strategy? Do we need to map dto to req or vice versa?
     @PostMapping("/register")
     public ResponseEntity<AuthenticationResponse> register(@RequestBody RegisterRequest request) throws MtgWalletGenericException {
-        return ResponseEntity.ok(authenticationService.register(request));
+        try {
+            return ResponseEntity.ok(authenticationService.register(request));
+        } catch (MtgWalletGenericException e) {
+            if (GenericExceptionMessages.USERNAME_ALREADY_EXISTS.getMessage().equals(e.getMessage())) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).build();
+            } else {
+                throw e;
+            }
+        }
     }
 
     @PostMapping("/authenticate")
