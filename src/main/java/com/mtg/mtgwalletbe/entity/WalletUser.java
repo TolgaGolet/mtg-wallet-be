@@ -19,6 +19,9 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
+@Table(name = "wallet_user", indexes = {
+        @Index(name = "usernameIndex", columnList = "username")
+})
 public class WalletUser extends Auditable implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
