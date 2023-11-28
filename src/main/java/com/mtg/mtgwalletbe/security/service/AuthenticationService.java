@@ -41,6 +41,9 @@ public class AuthenticationService {
         if (walletUserRepository.findByUsername(request.getUsername()).isPresent()) {
             throw new MtgWalletGenericException(GenericExceptionMessages.USERNAME_ALREADY_EXISTS.getMessage());
         }
+        if (walletUserRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new MtgWalletGenericException(GenericExceptionMessages.EMAIL_ALREADY_EXISTS.getMessage());
+        }
         var user = WalletUser.builder()
                 .username(request.getUsername())
                 .email(request.getEmail())
@@ -107,6 +110,7 @@ public class AuthenticationService {
         userTokenRepository.saveAll(validUserTokens);
     }
 
+    @Transactional
     public AuthenticationResponse refreshToken(HttpServletRequest request, HttpServletResponse response) throws MtgWalletGenericException {
         final String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
         final String refreshToken;

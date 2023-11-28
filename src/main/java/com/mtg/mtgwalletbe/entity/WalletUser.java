@@ -20,7 +20,8 @@ import java.util.Set;
 @AllArgsConstructor
 @Entity
 @Table(name = "wallet_user", indexes = {
-        @Index(name = "usernameIndex", columnList = "username")
+        @Index(name = "usernameIndex", columnList = "username"),
+        @Index(name = "emailIndex", columnList = "email")
 })
 public class WalletUser extends Auditable implements UserDetails {
     @Id

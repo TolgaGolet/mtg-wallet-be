@@ -3,6 +3,10 @@ package com.mtg.mtgwalletbe.exception.enums;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+/*
+ * Returned HTTP status codes for exceptions are managed from here
+ * com.mtg.mtgwalletbe.exception.MtgWalletExceptionHandler.handleException(com.mtg.mtgwalletbe.exception.MtgWalletGenericException)
+ */
 @Getter
 @AllArgsConstructor
 public enum GenericExceptionMessages {
@@ -13,7 +17,8 @@ public enum GenericExceptionMessages {
     BAD_USERNAME_OR_PASSWORD("Username or password is wrong"),
     USER_NOT_FOUND("User not found"),
     ROLE_NOT_FOUND("Role not found"),
-    USERNAME_ALREADY_EXISTS("Username already exists"),
+    USERNAME_ALREADY_EXISTS("Username is already taken. Please choose another username"),
+    EMAIL_ALREADY_EXISTS("Email is already registered. Please choose another email address"),
     ROLE_NAME_ALREADY_EXISTS("Role name already exists"),
     MISSING_REFRESH_TOKEN("Refresh token is missing"),
     PAYEE_NOT_FOUND("Payee not found"),
@@ -25,4 +30,13 @@ public enum GenericExceptionMessages {
     PAYEE_CATEGORY_TRANSACTION_TYPE_NOT_VALID("Payee category transaction type not valid");
 
     private final String message;
+
+    public static GenericExceptionMessages fromMessage(String message) {
+        for (GenericExceptionMessages value : values()) {
+            if (value.getMessage().equals(message)) {
+                return value;
+            }
+        }
+        return null;
+    }
 }
