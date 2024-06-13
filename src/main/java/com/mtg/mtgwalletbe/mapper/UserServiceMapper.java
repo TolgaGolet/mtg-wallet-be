@@ -1,7 +1,6 @@
 package com.mtg.mtgwalletbe.mapper;
 
 import com.mtg.mtgwalletbe.api.request.RoleRequest;
-import com.mtg.mtgwalletbe.api.request.WalletUserRequest;
 import com.mtg.mtgwalletbe.api.response.RoleResponse;
 import com.mtg.mtgwalletbe.api.response.WalletUserCreateResponse;
 import com.mtg.mtgwalletbe.entity.Role;
@@ -24,8 +23,6 @@ public interface UserServiceMapper {
 
     @Mapping(source = "id", target = "userId")
     WalletUserCreateResponse toWalletUserCreateResponse(WalletUserDto walletUserDto);
-
-    WalletUserDto toWalletUserDto(WalletUserRequest walletUserRequest);
 
     RoleResponse toRoleResponse(RoleDto roleDto);
 
