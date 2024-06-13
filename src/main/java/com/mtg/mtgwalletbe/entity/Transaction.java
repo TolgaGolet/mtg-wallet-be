@@ -14,6 +14,13 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(indexes = {
+        @Index(columnList = "dateTime"),
+        @Index(columnList = "source_account_id"),
+        @Index(columnList = "target_account_id"),
+        @Index(columnList = "user_id"),
+        @Index(columnList = "user_id, dateTime")
+})
 public class Transaction extends Auditable {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)

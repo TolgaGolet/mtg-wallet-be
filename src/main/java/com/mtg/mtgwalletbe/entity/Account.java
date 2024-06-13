@@ -15,6 +15,9 @@ import java.math.BigDecimal;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(indexes = {
+        @Index(columnList = "user_id")
+})
 public class Account extends Auditable {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)

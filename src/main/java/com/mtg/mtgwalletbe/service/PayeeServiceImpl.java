@@ -6,6 +6,7 @@ import com.mtg.mtgwalletbe.enums.TransactionType;
 import com.mtg.mtgwalletbe.exception.MtgWalletGenericException;
 import com.mtg.mtgwalletbe.exception.enums.GenericExceptionMessages;
 import com.mtg.mtgwalletbe.mapper.PayeeServiceMapper;
+import com.mtg.mtgwalletbe.mapper.UserServiceMapper;
 import com.mtg.mtgwalletbe.repository.PayeeRepository;
 import com.mtg.mtgwalletbe.service.dto.CategoryDto;
 import com.mtg.mtgwalletbe.service.dto.PayeeDto;
@@ -14,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -24,9 +26,14 @@ public class PayeeServiceImpl implements PayeeService {
     private final PayeeServiceMapper mapper;
     private final CategoryService categoryService;
     private final UserService userService;
+    private final UserServiceMapper userServiceMapper;
 
     @Override
     public PayeeDto create(PayeeCreateRequest payeeCreateRequest) throws MtgWalletGenericException {
+        List<PayeeDto> userPayees = findAllByCurrentUser();
+        if (userPayees.stream().anyMatch(payee -> payee.getName().equals(payeeCreateRequest.getName()))) {
+            throw new MtgWalletGenericException(GenericExceptionMessages.PAYEE_NAME_ALREADY_EXISTS.getMessage());
+        }
         CategoryDto categoryDto = categoryService.getCategory(payeeCreateRequest.getCategoryId());
         if (categoryDto == null) {
             throw new MtgWalletGenericException(GenericExceptionMessages.CATEGORY_NOT_FOUND.getMessage());
@@ -35,6 +42,12 @@ public class PayeeServiceImpl implements PayeeService {
         PayeeDto payeeDtoToSave = PayeeDto.builder().name(payeeCreateRequest.getName())
                 .category(categoryDto).user(walletUserDto).build();
         return mapper.toPayeeDto(repository.save(mapper.toPayeeEntity(payeeDtoToSave)));
+    }
+
+    @Override
+    public List<PayeeDto> findAllByCurrentUser() {
+        WalletUserDto walletUserDto = userService.getCurrentLoggedInUser();
+        return mapper.toPayeeDtoList(repository.findAllByUser(userServiceMapper.toWalletUserEntity(walletUserDto)));
     }
 
     @Override

@@ -6,6 +6,7 @@ import com.mtg.mtgwalletbe.enums.TransactionType;
 import com.mtg.mtgwalletbe.exception.MtgWalletGenericException;
 import com.mtg.mtgwalletbe.exception.enums.GenericExceptionMessages;
 import com.mtg.mtgwalletbe.mapper.CategoryServiceMapper;
+import com.mtg.mtgwalletbe.mapper.UserServiceMapper;
 import com.mtg.mtgwalletbe.repository.CategoryRepository;
 import com.mtg.mtgwalletbe.service.dto.CategoryDto;
 import com.mtg.mtgwalletbe.service.dto.WalletUserDto;
@@ -13,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -22,12 +24,17 @@ public class CategoryServiceImpl implements CategoryService {
     private final CategoryRepository repository;
     private final CategoryServiceMapper mapper;
     private final UserService userService;
+    private final UserServiceMapper userServiceMapper;
 
     @Override
     public CategoryDto create(CategoryCreateRequest categoryCreateRequest) throws MtgWalletGenericException {
         TransactionType transactionType = TransactionType.of(categoryCreateRequest.getTransactionTypeKey());
         CategoryDto parentCategoryDto = null;
         WalletUserDto walletUserDto = userService.getCurrentLoggedInUser();
+        List<CategoryDto> userCategories = findAllByCurrentUser();
+        if (userCategories.stream().anyMatch(category -> category.getName().equals(categoryCreateRequest.getName()))) {
+            throw new MtgWalletGenericException(GenericExceptionMessages.CATEGORY_NAME_ALREADY_EXISTS.getMessage());
+        }
         if (categoryCreateRequest.getParentCategoryId() != null) {
             parentCategoryDto = getCategory(categoryCreateRequest.getParentCategoryId());
         }
@@ -38,6 +45,12 @@ public class CategoryServiceImpl implements CategoryService {
                 .transactionType(transactionType)
                 .user(walletUserDto).parentCategory(parentCategoryDto).build();
         return mapper.toCategoryDto(repository.save(mapper.toCategoryEntity(categoryDtoToSave)));
+    }
+
+    @Override
+    public List<CategoryDto> findAllByCurrentUser() {
+        WalletUserDto walletUserDto = userService.getCurrentLoggedInUser();
+        return mapper.toCategoryDtoList(repository.findAllByUser(userServiceMapper.toWalletUserEntity(walletUserDto)));
     }
 
     @Override

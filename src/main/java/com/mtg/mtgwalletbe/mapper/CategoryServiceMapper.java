@@ -6,6 +6,8 @@ import com.mtg.mtgwalletbe.service.dto.CategoryDto;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
+import java.util.List;
+
 @Mapper(componentModel = "spring")
 public interface CategoryServiceMapper {
     Category toCategoryEntity(CategoryDto categoryDto);
@@ -16,4 +18,6 @@ public interface CategoryServiceMapper {
     @Mapping(source = "parentCategory.id", target = "parentCategoryId")
     @Mapping(source = "id", target = "categoryId")
     CategoryCreateResponse toCategoryCreateResponse(CategoryDto categoryDto);
+
+    List<CategoryDto> toCategoryDtoList(List<Category> categoryEntities);
 }

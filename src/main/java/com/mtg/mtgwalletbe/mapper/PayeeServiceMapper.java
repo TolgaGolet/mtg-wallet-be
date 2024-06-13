@@ -6,6 +6,8 @@ import com.mtg.mtgwalletbe.service.dto.PayeeDto;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
+import java.util.List;
+
 @Mapper(componentModel = "spring")
 public interface PayeeServiceMapper {
     Payee toPayeeEntity(PayeeDto payeeDto);
@@ -16,4 +18,6 @@ public interface PayeeServiceMapper {
     @Mapping(source = "user.username", target = "username")
     @Mapping(source = "id", target = "payeeId")
     PayeeCreateResponse toPayeeCreateResponse(PayeeDto payeeDto);
+
+    List<PayeeDto> toPayeeDtoList(List<Payee> payeeList);
 }
