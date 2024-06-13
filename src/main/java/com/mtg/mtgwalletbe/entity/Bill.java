@@ -32,4 +32,5 @@ public class Bill extends Auditable {
     @NotNull
     @Column(length = 10)
     private RecurrenceType recurrenceType;
+    // TODO user relationship and index
 }

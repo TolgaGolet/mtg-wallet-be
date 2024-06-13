@@ -12,6 +12,10 @@ import lombok.*;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(indexes = {
+        @Index(columnList = "parent_category_id, user_id"),
+        @Index(columnList = "user_id")
+})
 public class Category extends Auditable {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)

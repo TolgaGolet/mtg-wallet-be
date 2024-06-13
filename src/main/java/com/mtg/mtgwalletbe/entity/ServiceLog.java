@@ -16,6 +16,9 @@ import static com.mtg.mtgwalletbe.aspect.LoggableAspect.MAX_CHARS_RESPONSE;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
+@Table(indexes = {
+        @Index(columnList = "serviceName, createdDate, status")
+})
 public class ServiceLog extends Auditable {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)

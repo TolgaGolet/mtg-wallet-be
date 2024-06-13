@@ -12,9 +12,8 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-// TODO add indexes like this where needed
-@Table(name = "user_token", indexes = {
-        @Index(name = "userIdIndex", columnList = "user_id")
+@Table(indexes = {
+        @Index(columnList = "user_id")
 })
 public class UserToken extends Auditable {
     @Id

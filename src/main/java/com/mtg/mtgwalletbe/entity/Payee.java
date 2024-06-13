@@ -10,6 +10,9 @@ import lombok.*;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(indexes = {
+        @Index(columnList = "user_id")
+})
 public class Payee extends Auditable {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)

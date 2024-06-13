@@ -8,25 +8,30 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import static com.mtg.mtgwalletbe.entity.WalletUser.*;
+
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class RegisterRequest {
+    public static final int PASSWORD_DECODED_MIN_LENGTH = 3;
+    public static final int PASSWORD_DECODED_MAX_LENGTH = 30;
+
     @NotNull
-    @Size(min = 3, max = 15)
-    @Pattern(regexp = "^[a-zA-Z0-9]+$")
+    @Size(min = USERNAME_MIN_LENGTH, max = USERNAME_MAX_LENGTH)
+    @Pattern(regexp = USERNAME_REGULAR_EXPRESSION)
     private String username;
     @NotNull
-    @Size(min = 3, max = 100)
-    @Pattern(regexp = "^[a-zA-Z0-9_!#$%&'*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+$")
+    @Size(min = EMAIL_MIN_LENGTH, max = EMAIL_MAX_LENGTH)
+    @Pattern(regexp = EMAIL_REGULAR_EXPRESSION)
     private String email;
     @NotNull
-    @Size(min = 3, max = 15)
+    @Size(min = NAME_MIN_LENGTH, max = NAME_MAX_LENGTH)
     private String name;
-    @Size(max = 15)
+    @Size(max = SURNAME_MAX_LENGTH)
     private String surname;
     @NotNull
-    @Size(min = 4, max = 30)
+    @Size(min = PASSWORD_DECODED_MIN_LENGTH, max = PASSWORD_DECODED_MAX_LENGTH)
     private String password;
 }

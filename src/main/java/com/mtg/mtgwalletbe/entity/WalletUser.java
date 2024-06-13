@@ -19,28 +19,38 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "wallet_user", indexes = {
-        @Index(name = "usernameIndex", columnList = "username"),
-        @Index(name = "emailIndex", columnList = "email")
+@Table(indexes = {
+        @Index(columnList = "username"),
+        @Index(columnList = "email")
 })
 public class WalletUser extends Auditable implements UserDetails {
+    public static final int USERNAME_MIN_LENGTH = 3;
+    public static final int USERNAME_MAX_LENGTH = 15;
+    public static final String USERNAME_REGULAR_EXPRESSION = "^[a-zA-Z0-9]+$";
+    public static final int EMAIL_MIN_LENGTH = 3;
+    public static final int EMAIL_MAX_LENGTH = 100;
+    public static final String EMAIL_REGULAR_EXPRESSION = "^[a-zA-Z0-9_!#$%&'*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+$";
+    public static final int NAME_MIN_LENGTH = 3;
+    public static final int NAME_MAX_LENGTH = 15;
+    public static final int SURNAME_MAX_LENGTH = 15;
+
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(unique = true, updatable = false)
     private Long id;
     @NotNull
-    @Size(min = 3, max = 15)
-    @Column(unique = true, length = 15)
+    @Size(min = USERNAME_MIN_LENGTH, max = USERNAME_MAX_LENGTH)
+    @Column(unique = true, length = USERNAME_MAX_LENGTH)
     private String username;
     @NotNull
-    @Size(min = 3, max = 100)
-    @Column(unique = true, length = 100)
+    @Size(min = EMAIL_MIN_LENGTH, max = EMAIL_MAX_LENGTH)
+    @Column(unique = true, length = EMAIL_MAX_LENGTH)
     private String email;
     @NotNull
-    @Size(min = 3, max = 15)
-    @Column(length = 15)
+    @Size(min = NAME_MIN_LENGTH, max = SURNAME_MAX_LENGTH)
+    @Column(length = SURNAME_MAX_LENGTH)
     private String name;
-    @Size(max = 15)
+    @Size(max = SURNAME_MAX_LENGTH)
     private String surname;
     @NotNull
     private String password;
@@ -76,6 +86,8 @@ public class WalletUser extends Auditable implements UserDetails {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Payee defaultPayeeForIncome;
+
+    // TODO add columns and functionalities for isCredentialsNonExpired, isEnabled etc.
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

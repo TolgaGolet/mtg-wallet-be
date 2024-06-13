@@ -27,6 +27,8 @@ public enum GenericExceptionMessages {
     ACCOUNT_NOT_FOUND("Account not found"),
     ACCOUNT_NAME_ALREADY_EXISTS("Account name already exists"),
     CATEGORY_NOT_FOUND("Category not found"),
+    CATEGORY_NAME_ALREADY_EXISTS("Category name already exists"),
+    PAYEE_NAME_ALREADY_EXISTS("Payee name already exists"),
     TARGET_ACCOUNT_ID_CANT_BE_EMPTY_FOR_TRANSFERS("Target account id can't be empty for transfer transactions"),
     TARGET_ACCOUNT_ID_SHOULD_BE_EMPTY_FOR_EXPENSES_AND_INCOMES("Target account id should be empty for expense and income transactions"),
     SOURCE_ACCOUNT_ID_CANT_BE_THE_SAME_AS_TARGET_ACCOUNT_ID("Source account id can't be the same as target account id"),
