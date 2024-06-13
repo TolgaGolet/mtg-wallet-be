@@ -26,11 +26,8 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public CategoryDto create(CategoryCreateRequest categoryCreateRequest) throws MtgWalletGenericException {
         TransactionType transactionType = TransactionType.of(categoryCreateRequest.getTransactionTypeKey());
-        WalletUserDto walletUserDto = null;
         CategoryDto parentCategoryDto = null;
-        if (categoryCreateRequest.getUsername() != null) {
-            walletUserDto = userService.getUser(categoryCreateRequest.getUsername());
-        }
+        WalletUserDto walletUserDto = userService.getCurrentLoggedInUser();
         if (categoryCreateRequest.getParentCategoryId() != null) {
             parentCategoryDto = getCategory(categoryCreateRequest.getParentCategoryId());
         }
@@ -44,8 +41,11 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public CategoryDto getCategory(Long id) {
+    public CategoryDto getCategory(Long id) throws MtgWalletGenericException {
         Optional<Category> category = repository.findById(id);
+        if (category.isPresent()) {
+            userService.validateUsernameIfItsTheCurrentUser(category.get().getUser().getUsername());
+        }
         return category.map(mapper::toCategoryDto).orElse(null);
     }
 }

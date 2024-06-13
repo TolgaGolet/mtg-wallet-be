@@ -20,9 +20,11 @@ public class Transaction extends Auditable {
     @Column(unique = true, updatable = false)
     private Long id;
     @NotNull
+    @Column(length = 10)
     private TransactionType type;
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "payee_id", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Payee payee;
@@ -32,6 +34,7 @@ public class Transaction extends Auditable {
     private LocalDateTime dateTime;
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "source_account_id", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Account sourceAccount;
@@ -39,6 +42,7 @@ public class Transaction extends Auditable {
     private BigDecimal sourceAccountNewBalance;
     private BigDecimal targetAccountNewBalance;
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "target_account_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Account targetAccount;

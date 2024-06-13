@@ -1,6 +1,5 @@
 package com.mtg.mtgwalletbe.service;
 
-import com.mtg.mtgwalletbe.annotation.Loggable;
 import com.mtg.mtgwalletbe.api.request.ChangePasswordRequest;
 import com.mtg.mtgwalletbe.entity.Role;
 import com.mtg.mtgwalletbe.entity.WalletUser;
@@ -43,13 +42,13 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void addRoleToUser(String username, String roleName) throws MtgWalletGenericException {
+        // TODO add authorization who can call this
         WalletUser walletUser = walletUserRepository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException(GenericExceptionMessages.USER_NOT_FOUND.getMessage()));
         Role role = roleRepository.findByName(roleName).orElseThrow(() -> new MtgWalletGenericException(GenericExceptionMessages.ROLE_NOT_FOUND.getMessage()));
         walletUser.getRoles().add(role);
         walletUserRepository.save(walletUser);
     }
 
-    @Loggable
     @Override
     public WalletUserDto getUser(String username) {
         WalletUser walletUser = walletUserRepository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException(GenericExceptionMessages.USER_NOT_FOUND.getMessage()));
@@ -63,6 +62,22 @@ public class UserServiceImpl implements UserService {
             return Optional.empty();
         }
         return !Objects.equals(authentication.getName(), "anonymousUser") ? Optional.ofNullable(authentication.getName()) : Optional.empty();
+    }
+
+    @Override
+    public WalletUserDto getCurrentLoggedInUser() {
+        String username = getCurrentLoggedInUsername().orElseThrow(() -> new UsernameNotFoundException(GenericExceptionMessages.USER_NOT_FOUND.getMessage()));
+        return getUser(username);
+    }
+
+    @Override
+    public void validateUsernameIfItsTheCurrentUser(String username) throws MtgWalletGenericException {
+        if (username == null) {
+            throw new MtgWalletGenericException(GenericExceptionMessages.USERNAME_CANT_BE_NULL.getMessage());
+        }
+        if (!username.equals(getCurrentLoggedInUser().getUsername())) {
+            throw new MtgWalletGenericException(GenericExceptionMessages.NOT_AUTHORIZED_TO_PERFORM.getMessage());
+        }
     }
 
     @Override

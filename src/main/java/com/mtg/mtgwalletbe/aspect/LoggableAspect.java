@@ -17,8 +17,8 @@ import java.util.Arrays;
 public class LoggableAspect {
 
     private final ServiceLogRepository serviceLogRepository;
-    private static final int MAX_CHARS_REQUEST = 1000;
-    private static final int MAX_CHARS_RESPONSE = 1000;
+    public static final int MAX_CHARS_REQUEST = 10000;
+    public static final int MAX_CHARS_RESPONSE = 10000;
 
     @Pointcut("@annotation(com.mtg.mtgwalletbe.annotation.Loggable)")
     public void loggableMethods() {

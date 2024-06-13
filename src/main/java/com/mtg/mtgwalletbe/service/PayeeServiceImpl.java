@@ -31,23 +31,23 @@ public class PayeeServiceImpl implements PayeeService {
         if (categoryDto == null) {
             throw new MtgWalletGenericException(GenericExceptionMessages.CATEGORY_NOT_FOUND.getMessage());
         }
-        WalletUserDto walletUserDto = null;
-        if (payeeCreateRequest.getUsername() != null) {
-            walletUserDto = userService.getUser(payeeCreateRequest.getUsername());
-        }
+        WalletUserDto walletUserDto = userService.getCurrentLoggedInUser();
         PayeeDto payeeDtoToSave = PayeeDto.builder().name(payeeCreateRequest.getName())
                 .category(categoryDto).user(walletUserDto).build();
         return mapper.toPayeeDto(repository.save(mapper.toPayeeEntity(payeeDtoToSave)));
     }
 
     @Override
-    public PayeeDto getPayee(Long id) {
+    public PayeeDto getPayee(Long id) throws MtgWalletGenericException {
         Optional<Payee> payee = repository.findById(id);
+        if (payee.isPresent()) {
+            userService.validateUsernameIfItsTheCurrentUser(payee.get().getUser().getUsername());
+        }
         return payee.map(mapper::toPayeeDto).orElse(null);
     }
 
     @Override
-    public void addDefaultPayeeForExpenseToUser(String username, Long payeeId) throws MtgWalletGenericException {
+    public void addDefaultPayeeForExpenseToUser(Long payeeId) throws MtgWalletGenericException {
         PayeeDto payeeDto = getPayee(payeeId);
         if (payeeDto == null) {
             throw new MtgWalletGenericException(GenericExceptionMessages.PAYEE_NOT_FOUND.getMessage());
@@ -55,13 +55,13 @@ public class PayeeServiceImpl implements PayeeService {
         if (payeeDto.getCategory().getTransactionType() != TransactionType.EXPENSE) {
             throw new MtgWalletGenericException(GenericExceptionMessages.PAYEE_CATEGORY_TRANSACTION_TYPE_NOT_VALID.getMessage());
         }
-        WalletUserDto walletUserDto = userService.getUser(username);
+        WalletUserDto walletUserDto = userService.getCurrentLoggedInUser();
         walletUserDto.setDefaultPayeeForExpense(mapper.toPayeeEntity(payeeDto));
         userService.updateUser(walletUserDto);
     }
 
     @Override
-    public void addDefaultPayeeForIncomeToUser(String username, Long payeeId) throws MtgWalletGenericException {
+    public void addDefaultPayeeForIncomeToUser(Long payeeId) throws MtgWalletGenericException {
         PayeeDto payeeDto = getPayee(payeeId);
         if (payeeDto == null) {
             throw new MtgWalletGenericException(GenericExceptionMessages.PAYEE_NOT_FOUND.getMessage());
@@ -69,7 +69,7 @@ public class PayeeServiceImpl implements PayeeService {
         if (payeeDto.getCategory().getTransactionType() != TransactionType.INCOME) {
             throw new MtgWalletGenericException(GenericExceptionMessages.PAYEE_CATEGORY_TRANSACTION_TYPE_NOT_VALID.getMessage());
         }
-        WalletUserDto walletUserDto = userService.getUser(username);
+        WalletUserDto walletUserDto = userService.getCurrentLoggedInUser();
         walletUserDto.setDefaultPayeeForIncome(mapper.toPayeeEntity(payeeDto));
         userService.updateUser(walletUserDto);
     }

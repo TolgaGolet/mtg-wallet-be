@@ -11,6 +11,4 @@ public class PayeeCreateRequest {
     private String name;
     @NotNull
     private Long categoryId;
-    @Size(min = 3, max = 15)
-    private String username;
 }

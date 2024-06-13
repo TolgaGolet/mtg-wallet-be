@@ -30,5 +30,6 @@ public class Bill extends Auditable {
     @NotNull
     private LocalDateTime nextPaymentDateTime;
     @NotNull
+    @Column(length = 10)
     private RecurrenceType recurrenceType;
 }

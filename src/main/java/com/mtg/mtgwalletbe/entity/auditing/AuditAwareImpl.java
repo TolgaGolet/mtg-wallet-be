@@ -11,7 +11,7 @@ import java.util.Optional;
 @Component
 public class AuditAwareImpl implements AuditorAware<String> {
     private static final String ANONYMOUS_USER = "anonymousUser";
-    private static final String SYSTEM_USER = "SYSTEM";
+    public static final String SYSTEM_USER = "SYSTEM";
 
     @Override
     public Optional<String> getCurrentAuditor() {

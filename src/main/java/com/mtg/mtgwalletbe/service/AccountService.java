@@ -4,10 +4,14 @@ import com.mtg.mtgwalletbe.api.request.AccountCreateRequest;
 import com.mtg.mtgwalletbe.exception.MtgWalletGenericException;
 import com.mtg.mtgwalletbe.service.dto.AccountDto;
 
-public interface AccountService {
-    AccountDto create(AccountCreateRequest accountDto);
+import java.util.List;
 
-    public AccountDto getAccount(Long id);
+public interface AccountService {
+    AccountDto create(AccountCreateRequest accountDto) throws MtgWalletGenericException;
+
+    public List<AccountDto> findAllByCurrentUser();
+
+    public AccountDto getAccountById(Long id) throws MtgWalletGenericException;
 
     AccountDto update(AccountDto accountDto) throws MtgWalletGenericException;
 }

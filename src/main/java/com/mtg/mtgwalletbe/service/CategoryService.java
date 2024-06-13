@@ -7,5 +7,5 @@ import com.mtg.mtgwalletbe.service.dto.CategoryDto;
 public interface CategoryService {
     CategoryDto create(CategoryCreateRequest categoryCreateRequest) throws MtgWalletGenericException;
 
-    CategoryDto getCategory(Long id);
+    CategoryDto getCategory(Long id) throws MtgWalletGenericException;
 }

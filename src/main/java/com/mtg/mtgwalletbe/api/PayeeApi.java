@@ -27,14 +27,14 @@ public class PayeeApi {
     }
 
     @PostMapping("/add-default-payee-for-expense-to-user")
-    public ResponseEntity<Void> addDefaultPayeeForExpenseToUser(@RequestParam(name = "username") String username, @RequestParam(name = "payeeId") Long payeeId) throws MtgWalletGenericException {
-        payeeService.addDefaultPayeeForExpenseToUser(username, payeeId);
+    public ResponseEntity<Void> addDefaultPayeeForExpenseToUser(@RequestParam(name = "payeeId") Long payeeId) throws MtgWalletGenericException {
+        payeeService.addDefaultPayeeForExpenseToUser(payeeId);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/user/add-default-payee-for-income-to-user")
-    public ResponseEntity<Void> addDefaultPayeeForIncomeToUser(@RequestParam(name = "username") String username, @RequestParam(name = "payeeId") Long payeeId) throws MtgWalletGenericException {
-        payeeService.addDefaultPayeeForIncomeToUser(username, payeeId);
+    public ResponseEntity<Void> addDefaultPayeeForIncomeToUser(@RequestParam(name = "payeeId") Long payeeId) throws MtgWalletGenericException {
+        payeeService.addDefaultPayeeForIncomeToUser(payeeId);
         return ResponseEntity.ok().build();
     }
 }

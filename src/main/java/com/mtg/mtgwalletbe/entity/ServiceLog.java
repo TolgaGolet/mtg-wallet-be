@@ -8,6 +8,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import static com.mtg.mtgwalletbe.aspect.LoggableAspect.MAX_CHARS_REQUEST;
+import static com.mtg.mtgwalletbe.aspect.LoggableAspect.MAX_CHARS_RESPONSE;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -18,12 +21,14 @@ public class ServiceLog extends Auditable {
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(unique = true, updatable = false)
     private Long id;
+    @Column(length = 500)
     private String serviceName;
     @Size(max = 1)
+    @Column(length = 1)
     private String status;
-    @Size(max = 1000)
+    @Column(length = MAX_CHARS_REQUEST)
     private String request;
-    @Size(max = 1000)
+    @Column(length = MAX_CHARS_RESPONSE)
     private String response;
     private Long startTime;
     private Long endTime;

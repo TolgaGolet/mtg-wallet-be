@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.mtg.mtgwalletbe.entity.auditing.Auditable;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import lombok.*;
 
 @Entity
@@ -17,7 +16,7 @@ public class Payee extends Auditable {
     @Column(unique = true, updatable = false)
     private Long id;
     @NotNull
-    @Size(min = 3, max = 50)
+    @Column(length = 50)
     private String name;
     @NotNull
     @ManyToOne(fetch = FetchType.EAGER)

@@ -3,7 +3,6 @@ package com.mtg.mtgwalletbe.entity;
 import com.mtg.mtgwalletbe.entity.auditing.Auditable;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -19,7 +18,7 @@ public class Role extends Auditable implements GrantedAuthority {
     @Column(unique = true, updatable = false)
     private Long id;
     @NotNull
-    @Size(min = 3, max = 15)
+    @Column(length = 15)
     private String name;
 
     @Override

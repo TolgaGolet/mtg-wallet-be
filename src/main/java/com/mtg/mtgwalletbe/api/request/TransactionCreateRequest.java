@@ -23,7 +23,4 @@ public class TransactionCreateRequest {
     private Long targetAccountId;
     @Size(min = 1, max = 50)
     private String notes;
-    @NotNull
-    @Size(min = 1, max = 15)
-    private String username;
 }
