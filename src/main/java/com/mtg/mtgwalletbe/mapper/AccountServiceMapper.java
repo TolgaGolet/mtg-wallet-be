@@ -7,6 +7,8 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
+import java.util.List;
+
 @Mapper(componentModel = "spring")
 public interface AccountServiceMapper {
     Account toAccountEntity(AccountDto accountDto);
@@ -18,4 +20,6 @@ public interface AccountServiceMapper {
     AccountCreateResponse toAccountCreateResponse(AccountDto accountDto);
 
     void updateAccountFromDto(AccountDto dto, @MappingTarget Account entity);
+
+    List<AccountDto> toAccountDtoList(List<Account> accountList);
 }

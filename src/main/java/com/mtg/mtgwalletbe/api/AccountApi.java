@@ -2,6 +2,7 @@ package com.mtg.mtgwalletbe.api;
 
 import com.mtg.mtgwalletbe.api.request.AccountCreateRequest;
 import com.mtg.mtgwalletbe.api.response.AccountCreateResponse;
+import com.mtg.mtgwalletbe.exception.MtgWalletGenericException;
 import com.mtg.mtgwalletbe.mapper.AccountServiceMapper;
 import com.mtg.mtgwalletbe.service.AccountService;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +24,7 @@ public class AccountApi {
     private final AccountServiceMapper accountServiceMapper;
 
     @PostMapping("/create")
-    public ResponseEntity<AccountCreateResponse> create(@RequestBody @Validated AccountCreateRequest accountCreateRequest) {
+    public ResponseEntity<AccountCreateResponse> create(@RequestBody @Validated AccountCreateRequest accountCreateRequest) throws MtgWalletGenericException {
         URI uri = URI.create(ServletUriComponentsBuilder.fromCurrentContextPath().path("/user/create").toUriString());
         return ResponseEntity.created(uri).body(accountServiceMapper.toAccountCreateResponse(accountService.create(accountCreateRequest)));
     }

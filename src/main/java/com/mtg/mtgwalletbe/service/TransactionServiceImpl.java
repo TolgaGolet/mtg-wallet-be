@@ -24,13 +24,14 @@ public class TransactionServiceImpl implements TransactionService {
     private final UserService userService;
 
     // TODO owner checks(authorization) by getcurrentloggedinuser on all services. ex: account creation, check user username
+    // TODO get user info from getCurrentLoggedInUser method as below where possible.
     @Override
     public TransactionDto create(TransactionCreateRequest transactionCreateRequest) throws MtgWalletGenericException {
-        WalletUserDto walletUserDto = userService.getUser(transactionCreateRequest.getUsername());
+        WalletUserDto walletUserDto = userService.getCurrentLoggedInUser();
         TransactionType transactionType = TransactionType.of(transactionCreateRequest.getTypeKey());
         PayeeDto payeeDto = payeeService.getPayee(transactionCreateRequest.getPayeeId());
-        AccountDto sourceAccountDto = accountService.getAccount(transactionCreateRequest.getSourceAccountId());
-        AccountDto targetAccountDto = transactionCreateRequest.getTargetAccountId() != null ? accountService.getAccount(transactionCreateRequest.getTargetAccountId()) : null;
+        AccountDto sourceAccountDto = accountService.getAccountById(transactionCreateRequest.getSourceAccountId());
+        AccountDto targetAccountDto = transactionCreateRequest.getTargetAccountId() != null ? accountService.getAccountById(transactionCreateRequest.getTargetAccountId()) : null;
         validateTransaction(ValidateTransactionDto.builder()
                 .payeeDto(payeeDto)
                 .sourceAccountDto(sourceAccountDto)

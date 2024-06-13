@@ -24,6 +24,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import static com.mtg.mtgwalletbe.entity.auditing.AuditAwareImpl.SYSTEM_USER;
 import static com.mtg.mtgwalletbe.security.SecurityParams.BEARER_PREFIX;
 
 @Profile("!disabled-security")
@@ -43,6 +44,9 @@ public class AuthenticationService {
         }
         if (walletUserRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new MtgWalletGenericException(GenericExceptionMessages.EMAIL_ALREADY_EXISTS.getMessage());
+        }
+        if (request.getUsername().equalsIgnoreCase(SYSTEM_USER)) {
+            throw new MtgWalletGenericException(GenericExceptionMessages.SYSTEM_USERNAME_NOT_ALLOWED.getMessage());
         }
         var user = WalletUser.builder()
                 .username(request.getUsername())

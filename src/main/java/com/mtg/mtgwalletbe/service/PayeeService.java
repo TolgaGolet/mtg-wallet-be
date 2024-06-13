@@ -7,9 +7,9 @@ import com.mtg.mtgwalletbe.service.dto.PayeeDto;
 public interface PayeeService {
     PayeeDto create(PayeeCreateRequest payeeCreateRequest) throws MtgWalletGenericException;
 
-    public PayeeDto getPayee(Long id);
+    public PayeeDto getPayee(Long id) throws MtgWalletGenericException;
 
-    void addDefaultPayeeForExpenseToUser(String username, Long payeeId) throws MtgWalletGenericException;
+    void addDefaultPayeeForExpenseToUser(Long payeeId) throws MtgWalletGenericException;
 
-    void addDefaultPayeeForIncomeToUser(String username, Long payeeId) throws MtgWalletGenericException;
+    void addDefaultPayeeForIncomeToUser(Long payeeId) throws MtgWalletGenericException;
 }

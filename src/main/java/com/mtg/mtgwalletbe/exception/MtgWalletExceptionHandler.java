@@ -12,12 +12,13 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import java.util.Arrays;
 
+import static com.mtg.mtgwalletbe.aspect.LoggableAspect.MAX_CHARS_RESPONSE;
+
 @ControllerAdvice
 @Slf4j
 @RequiredArgsConstructor
 public class MtgWalletExceptionHandler {
     private final ServiceLogRepository serviceLogRepository;
-    private static final int MAX_CHARS_RESPONSE = 1000;
 
     /*
      * Expected exception handler

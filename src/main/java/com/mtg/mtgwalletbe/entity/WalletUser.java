@@ -30,14 +30,15 @@ public class WalletUser extends Auditable implements UserDetails {
     private Long id;
     @NotNull
     @Size(min = 3, max = 15)
-    @Column(unique = true)
+    @Column(unique = true, length = 15)
     private String username;
     @NotNull
     @Size(min = 3, max = 100)
-    @Column(unique = true)
+    @Column(unique = true, length = 100)
     private String email;
     @NotNull
     @Size(min = 3, max = 15)
+    @Column(length = 15)
     private String name;
     @Size(max = 15)
     private String surname;

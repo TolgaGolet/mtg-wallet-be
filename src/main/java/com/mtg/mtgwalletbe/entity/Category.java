@@ -19,9 +19,10 @@ public class Category extends Auditable {
     private Long id;
     @NotNull
     @Size(min = 3, max = 50)
+    @Column(length = 50)
     private String name;
-    // TODO check enumerated annotation istead of converters
     @NotNull
+    @Column(length = 10)
     private TransactionType transactionType;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")

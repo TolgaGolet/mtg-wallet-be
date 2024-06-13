@@ -28,12 +28,14 @@ public class Account extends Auditable {
     private WalletUser user;
     @NotNull
     @Size(min = 3, max = 50)
+    @Column(length = 50)
     private String name;
     @NotNull
+    @Column(length = 10)
     private AccountType type;
     @NotNull
     private BigDecimal balance;
     @NotNull
+    @Column(length = 10)
     private Currency currency;
 }
-
