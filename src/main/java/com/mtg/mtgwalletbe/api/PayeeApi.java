@@ -9,9 +9,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-
-import java.net.URI;
 
 @RestController
 @RequestMapping("/payee")
@@ -22,8 +19,7 @@ public class PayeeApi {
 
     @PostMapping("/create")
     public ResponseEntity<PayeeCreateResponse> create(@RequestBody @Validated PayeeCreateRequest payeeCreateRequest) throws MtgWalletGenericException {
-        URI uri = URI.create(ServletUriComponentsBuilder.fromCurrentContextPath().path("/payee/create").toUriString());
-        return ResponseEntity.created(uri).body(payeeServiceMapper.toPayeeCreateResponse(payeeService.create(payeeCreateRequest)));
+        return ResponseEntity.ok(payeeServiceMapper.toPayeeCreateResponse(payeeService.create(payeeCreateRequest)));
     }
 
     @PostMapping("/add-default-payee-for-expense-to-user")

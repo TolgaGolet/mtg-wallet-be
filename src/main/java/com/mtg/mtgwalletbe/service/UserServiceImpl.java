@@ -42,7 +42,6 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void addRoleToUser(String username, String roleName) throws MtgWalletGenericException {
-        // TODO add authorization who can call this
         WalletUser walletUser = walletUserRepository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException(GenericExceptionMessages.USER_NOT_FOUND.getMessage()));
         Role role = roleRepository.findByName(roleName).orElseThrow(() -> new MtgWalletGenericException(GenericExceptionMessages.ROLE_NOT_FOUND.getMessage()));
         walletUser.getRoles().add(role);

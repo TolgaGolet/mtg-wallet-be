@@ -1,5 +1,6 @@
 package com.mtg.mtgwalletbe.api.request;
 
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
@@ -15,6 +16,7 @@ public class TransactionCreateRequest {
     @NotNull
     private Long payeeId;
     @NotNull
+    @Digits(integer = 16, fraction = 2)
     private BigDecimal amount;
     @NotNull
     private LocalDateTime dateTime;

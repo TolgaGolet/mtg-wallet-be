@@ -12,9 +12,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-
-import java.net.URI;
 
 @RestController
 @RequestMapping("/transaction")
@@ -25,7 +22,6 @@ public class TransactionApi {
 
     @PostMapping("/create")
     public ResponseEntity<TransactionCreateResponse> create(@RequestBody @Validated TransactionCreateRequest transactionCreateRequest) throws MtgWalletGenericException {
-        URI uri = URI.create(ServletUriComponentsBuilder.fromCurrentContextPath().path("/transaction/create").toUriString());
-        return ResponseEntity.created(uri).body(transactionServiceMapper.toTransactionCreateResponse(transactionService.create(transactionCreateRequest)));
+        return ResponseEntity.ok(transactionServiceMapper.toTransactionCreateResponse(transactionService.create(transactionCreateRequest)));
     }
 }

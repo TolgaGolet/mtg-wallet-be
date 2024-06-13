@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
@@ -35,6 +36,16 @@ public class MtgWalletExceptionHandler {
             case null, default -> HttpStatus.INTERNAL_SERVER_ERROR;
         };
         return new ResponseEntity<>(errorMessage, httpStatus);
+    }
+
+    /*
+     * Access denied exception from @PreAuthorize handler
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<String> handleException(AccessDeniedException ex) {
+        log.error("An error occurred: " + ex.getMessage() + Arrays.toString(ex.getStackTrace()));
+        logError(ex);
+        return new ResponseEntity<>("Access denied", HttpStatus.FORBIDDEN);
     }
 
     /*
