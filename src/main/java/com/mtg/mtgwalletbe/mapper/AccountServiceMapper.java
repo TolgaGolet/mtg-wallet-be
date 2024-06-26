@@ -1,6 +1,6 @@
 package com.mtg.mtgwalletbe.mapper;
 
-import com.mtg.mtgwalletbe.api.response.AccountCreateResponse;
+import com.mtg.mtgwalletbe.api.response.AccountResponse;
 import com.mtg.mtgwalletbe.entity.Account;
 import com.mtg.mtgwalletbe.service.dto.AccountDto;
 import org.mapstruct.Mapper;
@@ -17,7 +17,9 @@ public interface AccountServiceMapper {
 
     @Mapping(source = "user.username", target = "username")
     @Mapping(source = "id", target = "accountId")
-    AccountCreateResponse toAccountCreateResponse(AccountDto accountDto);
+    AccountResponse toAccountResponse(AccountDto accountDto);
+
+    List<AccountResponse> toAccountResponseList(List<AccountDto> accountDtoList);
 
     void updateAccountFromDto(AccountDto dto, @MappingTarget Account entity);
 

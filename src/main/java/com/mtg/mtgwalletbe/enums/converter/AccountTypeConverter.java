@@ -14,7 +14,7 @@ public class AccountTypeConverter implements AttributeConverter<AccountType, Str
         if (attribute == null) {
             return null;
         }
-        return attribute.getKey();
+        return attribute.getValue();
     }
 
     @Override
@@ -22,6 +22,6 @@ public class AccountTypeConverter implements AttributeConverter<AccountType, Str
         if (dbData == null) {
             return null;
         }
-        return Stream.of(AccountType.values()).filter(item -> Objects.equals(item.getKey(), dbData)).findFirst().orElseThrow(IllegalArgumentException::new);
+        return Stream.of(AccountType.values()).filter(item -> Objects.equals(item.getValue(), dbData)).findFirst().orElseThrow(IllegalArgumentException::new);
     }
 }

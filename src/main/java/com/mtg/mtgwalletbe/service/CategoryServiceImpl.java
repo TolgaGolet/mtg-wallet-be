@@ -28,7 +28,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public CategoryDto create(CategoryCreateRequest categoryCreateRequest) throws MtgWalletGenericException {
-        TransactionType transactionType = TransactionType.of(categoryCreateRequest.getTransactionTypeKey());
+        TransactionType transactionType = TransactionType.of(categoryCreateRequest.getTransactionTypeValue());
         CategoryDto parentCategoryDto = null;
         WalletUserDto walletUserDto = userService.getCurrentLoggedInUser();
         List<CategoryDto> userCategories = findAllByCurrentUser();
