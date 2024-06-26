@@ -14,7 +14,7 @@ public class RecurrenceTypeConverter implements AttributeConverter<RecurrenceTyp
         if (attribute == null) {
             return null;
         }
-        return attribute.getKey();
+        return attribute.getValue();
     }
 
     @Override
@@ -22,6 +22,6 @@ public class RecurrenceTypeConverter implements AttributeConverter<RecurrenceTyp
         if (dbData == null) {
             return null;
         }
-        return Stream.of(RecurrenceType.values()).filter(item -> Objects.equals(item.getKey(), dbData)).findFirst().orElseThrow(IllegalArgumentException::new);
+        return Stream.of(RecurrenceType.values()).filter(item -> Objects.equals(item.getValue(), dbData)).findFirst().orElseThrow(IllegalArgumentException::new);
     }
 }

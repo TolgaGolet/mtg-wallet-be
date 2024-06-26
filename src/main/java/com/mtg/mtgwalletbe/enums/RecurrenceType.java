@@ -18,11 +18,11 @@ public enum RecurrenceType {
     FOUR_WEEKS("4W", "Every four weeks"),
     MONTHLY("M", "Every month at the same day");
 
-    private final String key;
     private final String value;
+    private final String label;
 
     @JsonCreator
-    public static RecurrenceType of(@JsonProperty("key") String key) {
-        return Arrays.stream(RecurrenceType.values()).filter(item -> Objects.equals(item.getKey(), key)).findFirst().orElseThrow(() -> new IllegalArgumentException("IllegalArgumentException with key: " + key));
+    public static RecurrenceType of(@JsonProperty("value") String value) {
+        return Arrays.stream(RecurrenceType.values()).filter(item -> Objects.equals(item.getValue(), value)).findFirst().orElseThrow(() -> new IllegalArgumentException("IllegalArgumentException with value: " + value));
     }
 }

@@ -17,11 +17,11 @@ public enum Currency {
     USD("USD", "US Dollar"),
     EUR("EUR", "Euro");
 
-    private final String key;
     private final String value;
+    private final String label;
 
     @JsonCreator
-    public static Currency of(@JsonProperty("key") String key) {
-        return Arrays.stream(Currency.values()).filter(item -> Objects.equals(item.getKey(), key)).findFirst().orElseThrow(() -> new IllegalArgumentException("IllegalArgumentException with key: " + key));
+    public static Currency of(@JsonProperty("value") String value) {
+        return Arrays.stream(Currency.values()).filter(item -> Objects.equals(item.getValue(), value)).findFirst().orElseThrow(() -> new IllegalArgumentException("IllegalArgumentException with value: " + value));
     }
 }

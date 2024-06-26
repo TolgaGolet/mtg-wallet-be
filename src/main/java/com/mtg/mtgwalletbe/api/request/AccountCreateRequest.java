@@ -16,12 +16,12 @@ public class AccountCreateRequest {
     private String name;
     @NotNull
     @Size(min = 1, max = 15)
-    private String typeKey;
+    private String typeValue;
     @NotNull
     @Digits(integer = 16, fraction = 2)
     private BigDecimal balance;
     @NotNull
     @Size(min = 1, max = 3)
     @Pattern(regexp = "^[A-Z]{3}$")
-    private String currencyKey;
+    private String currencyValue;
 }

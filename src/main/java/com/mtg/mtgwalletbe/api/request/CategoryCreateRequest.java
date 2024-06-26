@@ -11,6 +11,6 @@ public class CategoryCreateRequest {
     private String name;
     @NotNull
     @Size(min = 1, max = 15)
-    private String transactionTypeKey;
+    private String transactionTypeValue;
     private Long parentCategoryId;
 }

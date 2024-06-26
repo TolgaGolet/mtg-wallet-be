@@ -30,12 +30,15 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public AccountDto create(AccountCreateRequest accountCreateRequest) throws MtgWalletGenericException {
         WalletUserDto walletUserDto = userService.getCurrentLoggedInUser();
-        AccountType accountType = AccountType.of(accountCreateRequest.getTypeKey());
-        Currency currency = Currency.of(accountCreateRequest.getCurrencyKey());
+        AccountType accountType = AccountType.of(accountCreateRequest.getTypeValue());
+        Currency currency = Currency.of(accountCreateRequest.getCurrencyValue());
         if (accountCreateRequest.getBalance() == null) {
             accountCreateRequest.setBalance(BigDecimal.ZERO);
         }
         List<AccountDto> userAccounts = findAllByCurrentUser();
+        if (userAccounts.size() > 15) {
+            throw new MtgWalletGenericException(GenericExceptionMessages.ACCOUNTS_LIMIT_EXCEEDED.getMessage());
+        }
         if (userAccounts.stream().anyMatch(account -> account.getName().equals(accountCreateRequest.getName()))) {
             throw new MtgWalletGenericException(GenericExceptionMessages.ACCOUNT_NAME_ALREADY_EXISTS.getMessage());
         }
