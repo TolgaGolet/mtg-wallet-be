@@ -14,6 +14,9 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(indexes = {
+        @Index(columnList = "user_id")
+})
 public class Bill extends Auditable {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -32,5 +35,10 @@ public class Bill extends Auditable {
     @NotNull
     @Column(length = 10)
     private RecurrenceType recurrenceType;
-    // TODO user relationship and index
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private WalletUser user;
 }

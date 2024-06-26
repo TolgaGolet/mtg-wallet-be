@@ -23,7 +23,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthenticationApi {
     private final AuthenticationService authenticationService;
 
-    // TODO changing mapper strategy? Do we need to map dto to req or vice versa?
     @PostMapping("/register")
     public ResponseEntity<AuthenticationResponse> register(@RequestBody @Validated RegisterRequest request) throws MtgWalletGenericException {
         return ResponseEntity.ok(authenticationService.register(request));
