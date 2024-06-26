@@ -8,7 +8,7 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 @Converter(autoApply = true)
-public class RecuurrenceTypeConverter implements AttributeConverter<RecurrenceType, String> {
+public class RecurrenceTypeConverter implements AttributeConverter<RecurrenceType, String> {
     @Override
     public String convertToDatabaseColumn(RecurrenceType attribute) {
         if (attribute == null) {

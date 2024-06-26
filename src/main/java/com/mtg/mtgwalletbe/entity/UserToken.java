@@ -13,7 +13,8 @@ import lombok.*;
 @AllArgsConstructor
 @Entity
 @Table(indexes = {
-        @Index(columnList = "user_id")
+        @Index(columnList = "user_id"),
+        @Index(columnList = "token")
 })
 public class UserToken extends Auditable {
     @Id
