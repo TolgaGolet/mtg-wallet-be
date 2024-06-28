@@ -6,6 +6,7 @@ import com.mtg.mtgwalletbe.api.response.WalletUserCreateResponse;
 import com.mtg.mtgwalletbe.entity.Role;
 import com.mtg.mtgwalletbe.entity.WalletUser;
 import com.mtg.mtgwalletbe.service.dto.RoleDto;
+import com.mtg.mtgwalletbe.service.dto.WalletUserBasicDto;
 import com.mtg.mtgwalletbe.service.dto.WalletUserDto;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -15,7 +16,11 @@ import org.mapstruct.MappingTarget;
 public interface UserServiceMapper {
     WalletUser toWalletUserEntity(WalletUserDto walletUserDto);
 
+    WalletUser toWalletUserEntity(WalletUserBasicDto walletUserDto);
+
     WalletUserDto toWalletUserDto(WalletUser walletUser);
+
+    WalletUserBasicDto toWalletUserBasicDto(WalletUser walletUser);
 
     Role toRoleEntity(RoleDto roleDto);
 

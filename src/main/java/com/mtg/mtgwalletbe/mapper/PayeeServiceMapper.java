@@ -10,12 +10,13 @@ import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface PayeeServiceMapper {
+    @Mapping(source = "userId", target = "user.id")
     Payee toPayeeEntity(PayeeDto payeeDto);
 
+    @Mapping(source = "user.id", target = "userId")
     PayeeDto toPayeeDto(Payee payeeEntity);
 
     @Mapping(source = "category.id", target = "categoryId")
-    @Mapping(source = "user.username", target = "username")
     @Mapping(source = "id", target = "payeeId")
     PayeeCreateResponse toPayeeCreateResponse(PayeeDto payeeDto);
 

@@ -1,13 +1,18 @@
 package com.mtg.mtgwalletbe.service;
 
 import com.mtg.mtgwalletbe.api.request.TransactionCreateRequest;
+import com.mtg.mtgwalletbe.entity.Account;
+import com.mtg.mtgwalletbe.entity.Transaction;
 import com.mtg.mtgwalletbe.enums.TransactionType;
 import com.mtg.mtgwalletbe.exception.MtgWalletGenericException;
 import com.mtg.mtgwalletbe.exception.enums.GenericExceptionMessages;
 import com.mtg.mtgwalletbe.mapper.TransactionServiceMapper;
+import com.mtg.mtgwalletbe.mapper.UserServiceMapper;
 import com.mtg.mtgwalletbe.repository.TransactionRepository;
 import com.mtg.mtgwalletbe.service.dto.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,13 +24,14 @@ import java.util.Objects;
 public class TransactionServiceImpl implements TransactionService {
     private final TransactionRepository repository;
     private final TransactionServiceMapper mapper;
+    private final UserServiceMapper userServiceMapper;
     private final PayeeService payeeService;
     private final AccountService accountService;
     private final UserService userService;
-    
+
     @Override
     public TransactionDto create(TransactionCreateRequest transactionCreateRequest) throws MtgWalletGenericException {
-        WalletUserDto walletUserDto = userService.getCurrentLoggedInUser();
+        WalletUserBasicDto walletUserDto = userService.getCurrentLoggedInUser();
         TransactionType transactionType = TransactionType.of(transactionCreateRequest.getTypeKey());
         PayeeDto payeeDto = payeeService.getPayee(transactionCreateRequest.getPayeeId());
         AccountDto sourceAccountDto = accountService.getAccountById(transactionCreateRequest.getSourceAccountId());
@@ -50,8 +56,15 @@ public class TransactionServiceImpl implements TransactionService {
                 .targetAccountNewBalance(targetAccountDto != null ? targetAccountDto.getBalance() : null)
                 .targetAccount(targetAccountDto)
                 .notes(transactionCreateRequest.getNotes())
-                .user(walletUserDto).build();
+                .userId(walletUserDto.getId()).build();
         return mapper.toTransactionDto(repository.save(mapper.toTransactionEntity(transactionDtoToSave)));
+    }
+
+    @Override
+    public Page<TransactionDto> findUserTransactionsByAccount(Account account, Pageable pageable) {
+        WalletUserBasicDto walletUserDto = userService.getCurrentLoggedInUser();
+        Page<Transaction> transactions = repository.findUserTransactionsByAccount(account, userServiceMapper.toWalletUserEntity(walletUserDto), pageable);
+        return transactions.map(mapper::toTransactionDto);
     }
 
     private void validateTransaction(ValidateTransactionDto validateTransactionDto) throws MtgWalletGenericException {

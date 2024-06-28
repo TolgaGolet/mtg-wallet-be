@@ -10,6 +10,7 @@ import com.mtg.mtgwalletbe.mapper.UserServiceMapper;
 import com.mtg.mtgwalletbe.repository.PayeeRepository;
 import com.mtg.mtgwalletbe.service.dto.CategoryDto;
 import com.mtg.mtgwalletbe.service.dto.PayeeDto;
+import com.mtg.mtgwalletbe.service.dto.WalletUserBasicDto;
 import com.mtg.mtgwalletbe.service.dto.WalletUserDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -38,15 +39,15 @@ public class PayeeServiceImpl implements PayeeService {
         if (categoryDto == null) {
             throw new MtgWalletGenericException(GenericExceptionMessages.CATEGORY_NOT_FOUND.getMessage());
         }
-        WalletUserDto walletUserDto = userService.getCurrentLoggedInUser();
+        WalletUserBasicDto walletUserDto = userService.getCurrentLoggedInUser();
         PayeeDto payeeDtoToSave = PayeeDto.builder().name(payeeCreateRequest.getName())
-                .category(categoryDto).user(walletUserDto).build();
+                .category(categoryDto).userId(walletUserDto.getId()).build();
         return mapper.toPayeeDto(repository.save(mapper.toPayeeEntity(payeeDtoToSave)));
     }
 
     @Override
     public List<PayeeDto> findAllByCurrentUser() {
-        WalletUserDto walletUserDto = userService.getCurrentLoggedInUser();
+        WalletUserBasicDto walletUserDto = userService.getCurrentLoggedInUser();
         return mapper.toPayeeDtoList(repository.findAllByUser(userServiceMapper.toWalletUserEntity(walletUserDto)));
     }
 
@@ -68,7 +69,7 @@ public class PayeeServiceImpl implements PayeeService {
         if (payeeDto.getCategory().getTransactionType() != TransactionType.EXPENSE) {
             throw new MtgWalletGenericException(GenericExceptionMessages.PAYEE_CATEGORY_TRANSACTION_TYPE_NOT_VALID.getMessage());
         }
-        WalletUserDto walletUserDto = userService.getCurrentLoggedInUser();
+        WalletUserDto walletUserDto = userService.getCurrentLoggedInUserFull();
         walletUserDto.setDefaultPayeeForExpense(mapper.toPayeeEntity(payeeDto));
         userService.updateUser(walletUserDto);
     }
@@ -82,7 +83,7 @@ public class PayeeServiceImpl implements PayeeService {
         if (payeeDto.getCategory().getTransactionType() != TransactionType.INCOME) {
             throw new MtgWalletGenericException(GenericExceptionMessages.PAYEE_CATEGORY_TRANSACTION_TYPE_NOT_VALID.getMessage());
         }
-        WalletUserDto walletUserDto = userService.getCurrentLoggedInUser();
+        WalletUserDto walletUserDto = userService.getCurrentLoggedInUserFull();
         walletUserDto.setDefaultPayeeForIncome(mapper.toPayeeEntity(payeeDto));
         userService.updateUser(walletUserDto);
     }

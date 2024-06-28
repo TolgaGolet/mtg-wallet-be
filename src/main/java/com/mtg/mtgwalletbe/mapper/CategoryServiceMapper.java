@@ -10,11 +10,13 @@ import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface CategoryServiceMapper {
+
+    @Mapping(source = "userId", target = "user.id")
     Category toCategoryEntity(CategoryDto categoryDto);
 
+    @Mapping(source = "user.id", target = "userId")
     CategoryDto toCategoryDto(Category categoryEntity);
 
-    @Mapping(source = "user.username", target = "username")
     @Mapping(source = "parentCategory.id", target = "parentCategoryId")
     @Mapping(source = "id", target = "categoryId")
     CategoryCreateResponse toCategoryCreateResponse(CategoryDto categoryDto);

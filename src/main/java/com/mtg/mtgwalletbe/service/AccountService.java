@@ -1,6 +1,7 @@
 package com.mtg.mtgwalletbe.service;
 
 import com.mtg.mtgwalletbe.api.request.AccountCreateRequest;
+import com.mtg.mtgwalletbe.api.response.AccountDetailsResponse;
 import com.mtg.mtgwalletbe.exception.MtgWalletGenericException;
 import com.mtg.mtgwalletbe.service.dto.AccountDto;
 
@@ -14,4 +15,6 @@ public interface AccountService {
     public AccountDto getAccountById(Long id) throws MtgWalletGenericException;
 
     AccountDto update(AccountDto accountDto) throws MtgWalletGenericException;
+
+    AccountDetailsResponse getAccountDetails(Long id, int pageNo) throws MtgWalletGenericException;
 }

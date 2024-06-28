@@ -8,8 +8,10 @@ import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface TransactionServiceMapper {
+    @Mapping(source = "userId", target = "user.id")
     Transaction toTransactionEntity(TransactionDto transactionDto);
 
+    @Mapping(source = "user.id", target = "userId")
     TransactionDto toTransactionDto(Transaction transactionEntity);
 
     @Mapping(source = "payee.id", target = "payeeId")
@@ -17,6 +19,5 @@ public interface TransactionServiceMapper {
     @Mapping(source = "targetAccount.id", target = "targetAccountId")
     @Mapping(source = "id", target = "transactionId")
     @Mapping(source = "type", target = "transactionType")
-    @Mapping(source = "user.username", target = "username")
     TransactionCreateResponse toTransactionCreateResponse(TransactionDto transactionDto);
 }

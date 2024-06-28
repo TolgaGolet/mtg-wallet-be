@@ -28,6 +28,6 @@ public class TestApi {
     @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping("/get-user/{username}")
     public ResponseEntity<WalletUserDto> getUser(@PathVariable(name = "username") String username) {
-        return ResponseEntity.ok(userService.getUser(username));
+        return ResponseEntity.ok(userService.getUserFullInfo(username));
     }
 }

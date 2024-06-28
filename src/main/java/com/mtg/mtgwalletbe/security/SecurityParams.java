@@ -1,5 +1,7 @@
 package com.mtg.mtgwalletbe.security;
 
+import org.springframework.beans.factory.annotation.Value;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -20,6 +22,8 @@ public class SecurityParams {
             "https://test-mtgwallet.onrender.com",
             "https://mtgwallet.onrender.com"
     ));
+    @Value("${mtgWallet.applicationConfig.defaultPageSize}")
+    public static final int DEFAULT_PAGE_SIZE = 10;
 
     private SecurityParams() {
         throw new IllegalStateException("SecurityParams class");

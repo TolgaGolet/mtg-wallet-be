@@ -12,6 +12,5 @@ public class CategoryCreateResponse {
     private Long categoryId;
     private String name;
     private TransactionType transactionType;
-    private String username;
     private Long parentCategoryId;
 }
