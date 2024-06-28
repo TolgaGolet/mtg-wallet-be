@@ -10,6 +10,6 @@ public class CategoryDto {
     private Long id;
     private String name;
     private TransactionType transactionType;
-    private WalletUserDto user;
+    private Long userId;
     private CategoryDto parentCategory;
 }

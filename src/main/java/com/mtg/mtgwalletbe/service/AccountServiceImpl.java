@@ -1,6 +1,7 @@
 package com.mtg.mtgwalletbe.service;
 
 import com.mtg.mtgwalletbe.api.request.AccountCreateRequest;
+import com.mtg.mtgwalletbe.api.response.AccountDetailsResponse;
 import com.mtg.mtgwalletbe.entity.Account;
 import com.mtg.mtgwalletbe.enums.AccountType;
 import com.mtg.mtgwalletbe.enums.Currency;
@@ -10,13 +11,14 @@ import com.mtg.mtgwalletbe.mapper.AccountServiceMapper;
 import com.mtg.mtgwalletbe.mapper.UserServiceMapper;
 import com.mtg.mtgwalletbe.repository.AccountRepository;
 import com.mtg.mtgwalletbe.service.dto.AccountDto;
-import com.mtg.mtgwalletbe.service.dto.WalletUserDto;
+import com.mtg.mtgwalletbe.service.dto.WalletUserBasicDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -29,27 +31,27 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public AccountDto create(AccountCreateRequest accountCreateRequest) throws MtgWalletGenericException {
-        WalletUserDto walletUserDto = userService.getCurrentLoggedInUser();
+        WalletUserBasicDto walletUserDto = userService.getCurrentLoggedInUser();
         AccountType accountType = AccountType.of(accountCreateRequest.getTypeValue());
         Currency currency = Currency.of(accountCreateRequest.getCurrencyValue());
         if (accountCreateRequest.getBalance() == null) {
             accountCreateRequest.setBalance(BigDecimal.ZERO);
         }
         List<AccountDto> userAccounts = findAllByCurrentUser();
-        if (userAccounts.size() > 15) {
+        if (userAccounts.size() >= 15) {
             throw new MtgWalletGenericException(GenericExceptionMessages.ACCOUNTS_LIMIT_EXCEEDED.getMessage());
         }
         if (userAccounts.stream().anyMatch(account -> account.getName().equals(accountCreateRequest.getName()))) {
             throw new MtgWalletGenericException(GenericExceptionMessages.ACCOUNT_NAME_ALREADY_EXISTS.getMessage());
         }
-        AccountDto accountDtoToSave = AccountDto.builder().user(walletUserDto).name(accountCreateRequest.getName()).type(accountType)
+        AccountDto accountDtoToSave = AccountDto.builder().userId(walletUserDto.getId()).name(accountCreateRequest.getName()).type(accountType)
                 .balance(accountCreateRequest.getBalance()).currency(currency).build();
         return mapper.toAccountDto(repository.save(mapper.toAccountEntity(accountDtoToSave)));
     }
 
     @Override
     public List<AccountDto> findAllByCurrentUser() {
-        WalletUserDto walletUserDto = userService.getCurrentLoggedInUser();
+        WalletUserBasicDto walletUserDto = userService.getCurrentLoggedInUser();
         return mapper.toAccountDtoList(repository.findAllByUser(userServiceMapper.toWalletUserEntity(walletUserDto)));
     }
 
@@ -66,5 +68,14 @@ public class AccountServiceImpl implements AccountService {
         userService.validateUsernameIfItsTheCurrentUser(account.getUser().getUsername());
         mapper.updateAccountFromDto(accountDto, account);
         return mapper.toAccountDto(repository.save(account));
+    }
+
+    @Override
+    public AccountDetailsResponse getAccountDetails(Long id, int pageNo) throws MtgWalletGenericException {
+        Optional<Account> account = repository.findById(id);
+        if (account.isEmpty()) {
+            throw new MtgWalletGenericException(GenericExceptionMessages.ACCOUNT_NOT_FOUND.getMessage());
+        }
+        return mapper.toAccountDetailsResponse(account.get());
     }
 }

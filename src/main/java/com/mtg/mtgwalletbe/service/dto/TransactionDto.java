@@ -20,5 +20,5 @@ public class TransactionDto {
     private BigDecimal targetAccountNewBalance;
     private AccountDto targetAccount;
     private String notes;
-    private WalletUserDto user;
+    private Long userId;
 }

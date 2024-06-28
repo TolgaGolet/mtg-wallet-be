@@ -3,6 +3,7 @@ package com.mtg.mtgwalletbe.service;
 import com.mtg.mtgwalletbe.api.request.ChangePasswordRequest;
 import com.mtg.mtgwalletbe.exception.MtgWalletGenericException;
 import com.mtg.mtgwalletbe.service.dto.RoleDto;
+import com.mtg.mtgwalletbe.service.dto.WalletUserBasicDto;
 import com.mtg.mtgwalletbe.service.dto.WalletUserDto;
 
 import java.security.Principal;
@@ -13,11 +14,15 @@ public interface UserService {
 
     void addRoleToUser(String username, String roleName) throws MtgWalletGenericException;
 
-    WalletUserDto getUser(String username);
+    WalletUserDto getUserFullInfo(String username);
+
+    WalletUserBasicDto getUserBasicInfo(String username);
 
     public Optional<String> getCurrentLoggedInUsername();
 
-    public WalletUserDto getCurrentLoggedInUser();
+    public WalletUserBasicDto getCurrentLoggedInUser();
+
+    public WalletUserDto getCurrentLoggedInUserFull();
 
     public void validateUsernameIfItsTheCurrentUser(String username) throws MtgWalletGenericException;
 

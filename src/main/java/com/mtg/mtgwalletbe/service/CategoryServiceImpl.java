@@ -9,7 +9,7 @@ import com.mtg.mtgwalletbe.mapper.CategoryServiceMapper;
 import com.mtg.mtgwalletbe.mapper.UserServiceMapper;
 import com.mtg.mtgwalletbe.repository.CategoryRepository;
 import com.mtg.mtgwalletbe.service.dto.CategoryDto;
-import com.mtg.mtgwalletbe.service.dto.WalletUserDto;
+import com.mtg.mtgwalletbe.service.dto.WalletUserBasicDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,7 +30,7 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryDto create(CategoryCreateRequest categoryCreateRequest) throws MtgWalletGenericException {
         TransactionType transactionType = TransactionType.of(categoryCreateRequest.getTransactionTypeValue());
         CategoryDto parentCategoryDto = null;
-        WalletUserDto walletUserDto = userService.getCurrentLoggedInUser();
+        WalletUserBasicDto walletUserDto = userService.getCurrentLoggedInUser();
         List<CategoryDto> userCategories = findAllByCurrentUser();
         if (userCategories.stream().anyMatch(category -> category.getName().equals(categoryCreateRequest.getName()))) {
             throw new MtgWalletGenericException(GenericExceptionMessages.CATEGORY_NAME_ALREADY_EXISTS.getMessage());
@@ -43,13 +43,13 @@ public class CategoryServiceImpl implements CategoryService {
         }
         CategoryDto categoryDtoToSave = CategoryDto.builder().name(categoryCreateRequest.getName())
                 .transactionType(transactionType)
-                .user(walletUserDto).parentCategory(parentCategoryDto).build();
+                .userId(walletUserDto.getId()).parentCategory(parentCategoryDto).build();
         return mapper.toCategoryDto(repository.save(mapper.toCategoryEntity(categoryDtoToSave)));
     }
 
     @Override
     public List<CategoryDto> findAllByCurrentUser() {
-        WalletUserDto walletUserDto = userService.getCurrentLoggedInUser();
+        WalletUserBasicDto walletUserDto = userService.getCurrentLoggedInUser();
         return mapper.toCategoryDtoList(repository.findAllByUser(userServiceMapper.toWalletUserEntity(walletUserDto)));
     }
 

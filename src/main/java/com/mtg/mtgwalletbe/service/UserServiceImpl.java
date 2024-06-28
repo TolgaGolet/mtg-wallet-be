@@ -9,6 +9,7 @@ import com.mtg.mtgwalletbe.mapper.UserServiceMapper;
 import com.mtg.mtgwalletbe.repository.RoleRepository;
 import com.mtg.mtgwalletbe.repository.WalletUserRepository;
 import com.mtg.mtgwalletbe.service.dto.RoleDto;
+import com.mtg.mtgwalletbe.service.dto.WalletUserBasicDto;
 import com.mtg.mtgwalletbe.service.dto.WalletUserDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -49,9 +50,15 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public WalletUserDto getUser(String username) {
+    public WalletUserDto getUserFullInfo(String username) {
         WalletUser walletUser = walletUserRepository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException(GenericExceptionMessages.USER_NOT_FOUND.getMessage()));
         return mapper.toWalletUserDto(walletUser);
+    }
+
+    @Override
+    public WalletUserBasicDto getUserBasicInfo(String username) {
+        WalletUser walletUser = walletUserRepository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException(GenericExceptionMessages.USER_NOT_FOUND.getMessage()));
+        return mapper.toWalletUserBasicDto(walletUser);
     }
 
     @Override
@@ -64,9 +71,15 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public WalletUserDto getCurrentLoggedInUser() {
+    public WalletUserBasicDto getCurrentLoggedInUser() {
         String username = getCurrentLoggedInUsername().orElseThrow(() -> new UsernameNotFoundException(GenericExceptionMessages.USER_NOT_FOUND.getMessage()));
-        return getUser(username);
+        return getUserBasicInfo(username);
+    }
+
+    @Override
+    public WalletUserDto getCurrentLoggedInUserFull() {
+        String username = getCurrentLoggedInUsername().orElseThrow(() -> new UsernameNotFoundException(GenericExceptionMessages.USER_NOT_FOUND.getMessage()));
+        return getUserFullInfo(username);
     }
 
     @Override

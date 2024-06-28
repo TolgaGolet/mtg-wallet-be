@@ -11,5 +11,4 @@ public class PayeeCreateResponse {
     private Long payeeId;
     private String name;
     private Long categoryId;
-    private String username;
 }

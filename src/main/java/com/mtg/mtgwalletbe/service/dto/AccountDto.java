@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 @Builder
 public class AccountDto {
     private Long id;
-    private WalletUserDto user;
+    private Long userId;
     private String name;
     private AccountType type;
     private BigDecimal balance;
