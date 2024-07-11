@@ -22,5 +22,4 @@ public class TransactionCreateResponse {
     private BigDecimal targetAccountNewBalance;
     private Long targetAccountId;
     private String notes;
-    private String username;
 }
