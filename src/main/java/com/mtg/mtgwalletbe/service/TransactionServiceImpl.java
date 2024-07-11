@@ -1,7 +1,7 @@
 package com.mtg.mtgwalletbe.service;
 
 import com.mtg.mtgwalletbe.api.request.TransactionCreateRequest;
-import com.mtg.mtgwalletbe.entity.Account;
+import com.mtg.mtgwalletbe.api.request.TransactionSearchRequest;
 import com.mtg.mtgwalletbe.entity.Transaction;
 import com.mtg.mtgwalletbe.enums.TransactionType;
 import com.mtg.mtgwalletbe.exception.MtgWalletGenericException;
@@ -10,9 +10,11 @@ import com.mtg.mtgwalletbe.mapper.TransactionServiceMapper;
 import com.mtg.mtgwalletbe.mapper.UserServiceMapper;
 import com.mtg.mtgwalletbe.repository.TransactionRepository;
 import com.mtg.mtgwalletbe.service.dto.*;
+import com.mtg.mtgwalletbe.specification.TransactionSpecification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -61,9 +63,11 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    public Page<TransactionDto> findUserTransactionsByAccount(Account account, Pageable pageable) {
+    public Page<TransactionDto> search(TransactionSearchRequest request, Pageable pageable) {
         WalletUserBasicDto walletUserDto = userService.getCurrentLoggedInUser();
-        Page<Transaction> transactions = repository.findUserTransactionsByAccount(account, userServiceMapper.toWalletUserEntity(walletUserDto), pageable);
+        request.setUserId(walletUserDto.getId());
+        Specification<Transaction> specification = TransactionSpecification.search(request);
+        Page<Transaction> transactions = repository.findAll(specification, pageable);
         return transactions.map(mapper::toTransactionDto);
     }
 

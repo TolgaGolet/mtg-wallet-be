@@ -18,8 +18,9 @@ public interface AccountServiceMapper {
     @Mapping(source = "user.id", target = "userId")
     AccountDto toAccountDto(Account accountEntity);
 
-    @Mapping(source = "id", target = "accountId")
     AccountResponse toAccountResponse(AccountDto accountDto);
+
+    AccountResponse toAccountResponse(Account account);
 
     List<AccountResponse> toAccountResponseList(List<AccountDto> accountDtoList);
 
@@ -28,9 +29,7 @@ public interface AccountServiceMapper {
 
     List<AccountDto> toAccountDtoList(List<Account> accountList);
 
-    @Mapping(source = "id", target = "accountId")
     AccountDetailsResponse toAccountDetailsResponse(Account account);
 
-    @Mapping(source = "accountId", target = "id")
     Account toAccountEntity(AccountDetailsResponse accountDetailsResponse);
 }
