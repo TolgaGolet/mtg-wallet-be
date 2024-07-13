@@ -2,10 +2,12 @@ package com.mtg.mtgwalletbe.service;
 
 import com.mtg.mtgwalletbe.api.request.AccountCreateRequest;
 import com.mtg.mtgwalletbe.api.request.AccountSearchRequest;
+import com.mtg.mtgwalletbe.api.request.AccountUpdateRequest;
 import com.mtg.mtgwalletbe.api.response.AccountResponse;
 import com.mtg.mtgwalletbe.entity.Account;
 import com.mtg.mtgwalletbe.enums.AccountType;
 import com.mtg.mtgwalletbe.enums.Currency;
+import com.mtg.mtgwalletbe.enums.Status;
 import com.mtg.mtgwalletbe.exception.MtgWalletGenericException;
 import com.mtg.mtgwalletbe.exception.enums.GenericExceptionMessages;
 import com.mtg.mtgwalletbe.mapper.AccountServiceMapper;
@@ -42,7 +44,7 @@ public class AccountServiceImpl implements AccountService {
         if (accountCreateRequest.getBalance() == null) {
             accountCreateRequest.setBalance(BigDecimal.ZERO);
         }
-        List<AccountDto> userAccounts = findAllByCurrentUser();
+        List<AccountDto> userAccounts = findAllByCurrentUserByStatus(Status.ACTIVE);
         if (userAccounts.size() >= MAX_ALLOWED_ACCOUNT_COUNT) {
             throw new MtgWalletGenericException(GenericExceptionMessages.ACCOUNTS_LIMIT_EXCEEDED.getMessage());
         }
@@ -50,23 +52,23 @@ public class AccountServiceImpl implements AccountService {
             throw new MtgWalletGenericException(GenericExceptionMessages.ACCOUNT_NAME_ALREADY_EXISTS.getMessage());
         }
         AccountDto accountDtoToSave = AccountDto.builder().userId(walletUserDto.getId()).name(accountCreateRequest.getName()).type(accountType)
-                .balance(accountCreateRequest.getBalance()).currency(currency).build();
+                .balance(accountCreateRequest.getBalance()).currency(currency).status(Status.ACTIVE).build();
         return mapper.toAccountDto(repository.save(mapper.toAccountEntity(accountDtoToSave)));
     }
 
     @Override
-    public Page<AccountResponse> search(AccountSearchRequest request, Pageable pageable) {
+    public Page<AccountResponse> search(AccountSearchRequest request, Status status, Pageable pageable) {
         WalletUserBasicDto walletUserDto = userService.getCurrentLoggedInUser();
         request.setUserId(walletUserDto.getId());
-        Specification<Account> specification = AccountSpecification.search(request);
+        Specification<Account> specification = AccountSpecification.search(request, status);
         Page<Account> accounts = repository.findAll(specification, pageable);
         return accounts.map(mapper::toAccountResponse);
     }
 
     @Override
-    public List<AccountDto> findAllByCurrentUser() {
+    public List<AccountDto> findAllByCurrentUserByStatus(Status status) {
         WalletUserBasicDto walletUserDto = userService.getCurrentLoggedInUser();
-        return mapper.toAccountDtoList(repository.findAllByUser(userServiceMapper.toWalletUserEntity(walletUserDto)));
+        return mapper.toAccountDtoList(repository.findAllByUser(userServiceMapper.toWalletUserEntity(walletUserDto), status));
     }
 
     @Override
@@ -77,10 +79,31 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
+    public AccountDto update(AccountUpdateRequest accountUpdateRequest, Long id) throws MtgWalletGenericException {
+        Account account = repository.findByIdAndStatus(id, Status.ACTIVE).orElseThrow(() -> new MtgWalletGenericException(GenericExceptionMessages.ACCOUNT_NOT_FOUND.getMessage()));
+        userService.validateUsernameIfItsTheCurrentUser(account.getUser().getUsername());
+        List<AccountDto> userAccounts = findAllByCurrentUserByStatus(Status.ACTIVE);
+        if (userAccounts.stream().anyMatch(existingAccount -> existingAccount.getName().equals(accountUpdateRequest.getName()))) {
+            throw new MtgWalletGenericException(GenericExceptionMessages.ACCOUNT_NAME_ALREADY_EXISTS.getMessage());
+        }
+        account.setName(accountUpdateRequest.getName());
+        account.setType(AccountType.of(accountUpdateRequest.getTypeValue()));
+        return mapper.toAccountDto(repository.save(account));
+    }
+
+    @Override
     public AccountDto update(AccountDto accountDto) throws MtgWalletGenericException {
-        Account account = repository.findById(accountDto.getId()).orElseThrow(() -> new MtgWalletGenericException(GenericExceptionMessages.ACCOUNT_NOT_FOUND.getMessage()));
+        Account account = repository.findByIdAndStatus(accountDto.getId(), Status.ACTIVE).orElseThrow(() -> new MtgWalletGenericException(GenericExceptionMessages.ACCOUNT_NOT_FOUND.getMessage()));
         userService.validateUsernameIfItsTheCurrentUser(account.getUser().getUsername());
         mapper.updateAccountFromDto(accountDto, account);
         return mapper.toAccountDto(repository.save(account));
+    }
+
+    @Override
+    public void delete(Long id) throws MtgWalletGenericException {
+        Account account = repository.findById(id).orElseThrow(() -> new MtgWalletGenericException(GenericExceptionMessages.ACCOUNT_NOT_FOUND.getMessage()));
+        userService.validateUsernameIfItsTheCurrentUser(account.getUser().getUsername());
+        account.setStatus(Status.DELETED);
+        repository.save(account);
     }
 }
