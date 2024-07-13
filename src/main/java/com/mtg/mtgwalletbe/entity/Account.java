@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.mtg.mtgwalletbe.entity.auditing.Auditable;
 import com.mtg.mtgwalletbe.enums.AccountType;
 import com.mtg.mtgwalletbe.enums.Currency;
+import com.mtg.mtgwalletbe.enums.Status;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -41,4 +42,7 @@ public class Account extends Auditable {
     @NotNull
     @Column(length = 10)
     private Currency currency;
+    @NotNull
+    @Column(length = 10)
+    private Status status;
 }
