@@ -30,6 +30,7 @@ import static com.mtg.mtgwalletbe.security.SecurityParams.BEARER_PREFIX;
 @Profile("!disabled-security")
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class AuthenticationService {
     private final AuthenticationManager authenticationManager;
     private final WalletUserRepository walletUserRepository;

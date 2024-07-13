@@ -2,6 +2,7 @@ package com.mtg.mtgwalletbe.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.mtg.mtgwalletbe.entity.auditing.Auditable;
+import com.mtg.mtgwalletbe.enums.Status;
 import com.mtg.mtgwalletbe.enums.TransactionType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -40,4 +41,7 @@ public class Category extends Auditable {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Category parentCategory;
+    @NotNull
+    @Column(length = 10)
+    private Status status;
 }

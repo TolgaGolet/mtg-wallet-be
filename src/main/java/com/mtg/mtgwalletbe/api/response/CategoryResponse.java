@@ -8,9 +8,10 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class CategoryCreateResponse {
-    private Long categoryId;
+public class CategoryResponse {
+    private Long id;
     private String name;
     private TransactionType transactionType;
     private Long parentCategoryId;
+    private String parentCategoryName;
 }
