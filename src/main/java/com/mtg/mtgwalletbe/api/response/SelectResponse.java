@@ -7,8 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class PayeeCreateResponse {
-    private Long payeeId;
-    private String name;
-    private Long categoryId;
+public class SelectResponse {
+    private String value;
+    private String label;
 }

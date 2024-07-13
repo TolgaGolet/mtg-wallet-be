@@ -1,6 +1,6 @@
 package com.mtg.mtgwalletbe.mapper;
 
-import com.mtg.mtgwalletbe.api.response.PayeeCreateResponse;
+import com.mtg.mtgwalletbe.api.response.PayeeResponse;
 import com.mtg.mtgwalletbe.entity.Payee;
 import com.mtg.mtgwalletbe.service.dto.PayeeDto;
 import org.mapstruct.Mapper;
@@ -17,8 +17,12 @@ public interface PayeeServiceMapper {
     PayeeDto toPayeeDto(Payee payeeEntity);
 
     @Mapping(source = "category.id", target = "categoryId")
-    @Mapping(source = "id", target = "payeeId")
-    PayeeCreateResponse toPayeeCreateResponse(PayeeDto payeeDto);
+    @Mapping(source = "category.name", target = "categoryName")
+    PayeeResponse toPayeeResponse(PayeeDto payeeDto);
+
+    @Mapping(source = "category.id", target = "categoryId")
+    @Mapping(source = "category.name", target = "categoryName")
+    PayeeResponse toPayeeResponse(Payee payee);
 
     List<PayeeDto> toPayeeDtoList(List<Payee> payeeList);
 }

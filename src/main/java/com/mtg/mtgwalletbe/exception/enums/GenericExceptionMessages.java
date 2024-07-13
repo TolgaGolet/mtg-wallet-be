@@ -27,6 +27,8 @@ public enum GenericExceptionMessages {
     ACCOUNT_NOT_FOUND("Account not found"),
     ACCOUNT_NAME_ALREADY_EXISTS("Account name already exists"),
     ACCOUNTS_LIMIT_EXCEEDED("User accounts limit exceeded"),
+    CATEGORIES_LIMIT_EXCEEDED("Categories limit exceeded"),
+    PAYEES_LIMIT_EXCEEDED("Payees limit exceeded"),
     CATEGORY_NOT_FOUND("Category not found"),
     CATEGORY_NAME_ALREADY_EXISTS("Category name already exists"),
     PAYEE_NAME_ALREADY_EXISTS("Payee name already exists"),

@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Data
-public class PayeeCreateRequest {
+public class PayeeUpdateRequest {
     @NotNull
     @Size(min = 3, max = 50)
     @Pattern(regexp = "^[a-zA-Z0-9\\sçğıöşü]+$")
