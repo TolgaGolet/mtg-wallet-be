@@ -2,6 +2,7 @@ package com.mtg.mtgwalletbe.mapper;
 
 import com.mtg.mtgwalletbe.api.response.CategoryResponse;
 import com.mtg.mtgwalletbe.api.response.CategorySelectResponse;
+import com.mtg.mtgwalletbe.api.response.SelectResponse;
 import com.mtg.mtgwalletbe.entity.Category;
 import com.mtg.mtgwalletbe.service.dto.CategoryDto;
 import org.mapstruct.Mapper;
@@ -33,4 +34,8 @@ public interface CategoryServiceMapper {
     @Mapping(source = "id", target = "value")
     @Mapping(source = "name", target = "label")
     CategorySelectResponse toCategorySelectResponse(CategoryResponse category);
+
+    @Mapping(source = "id", target = "value")
+    @Mapping(source = "name", target = "label")
+    SelectResponse toSelectResponse(CategoryResponse category);
 }

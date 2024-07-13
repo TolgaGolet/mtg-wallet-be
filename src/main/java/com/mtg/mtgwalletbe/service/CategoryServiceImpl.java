@@ -46,6 +46,9 @@ public class CategoryServiceImpl implements CategoryService {
         CategoryDto parentCategoryDto = null;
         WalletUserBasicDto walletUserDto = userService.getCurrentLoggedInUser();
         List<CategoryDto> userCategories = findAllByCurrentUserByStatus(Status.ACTIVE);
+        if (userCategories.size() >= MAX_ALLOWED_CATEGORY_COUNT) {
+            throw new MtgWalletGenericException(GenericExceptionMessages.CATEGORIES_LIMIT_EXCEEDED.getMessage());
+        }
         if (userCategories.stream().anyMatch(category -> category.getName().equals(categoryCreateRequest.getName()))) {
             throw new MtgWalletGenericException(GenericExceptionMessages.CATEGORY_NAME_ALREADY_EXISTS.getMessage());
         }
