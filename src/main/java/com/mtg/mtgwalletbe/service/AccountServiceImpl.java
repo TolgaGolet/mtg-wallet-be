@@ -69,7 +69,7 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public List<AccountDto> findAllByCurrentUserByStatus(Status status) {
         WalletUserBasicDto walletUserDto = userService.getCurrentLoggedInUser();
-        return mapper.toAccountDtoList(repository.findAllByUser(userServiceMapper.toWalletUserEntity(walletUserDto), status));
+        return mapper.toAccountDtoList(repository.findAllByUserAndStatus(userServiceMapper.toWalletUserEntity(walletUserDto), status));
     }
 
     @Override
@@ -104,6 +104,7 @@ public class AccountServiceImpl implements AccountService {
     public void delete(Long id) throws MtgWalletGenericException {
         Account account = repository.findById(id).orElseThrow(() -> new MtgWalletGenericException(GenericExceptionMessages.ACCOUNT_NOT_FOUND.getMessage()));
         userService.validateUsernameIfItsTheCurrentUser(account.getUser().getUsername());
+        account.setName("Deleted Account");
         account.setStatus(Status.DELETED);
         repository.save(account);
     }

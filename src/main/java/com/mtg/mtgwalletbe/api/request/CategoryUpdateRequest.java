@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Data
-public class CategoryCreateRequest {
+public class CategoryUpdateRequest {
     @NotNull
     @Size(min = 3, max = 50)
     @Pattern(regexp = "^[a-zA-Z0-9\\sçğıöşü]+$")

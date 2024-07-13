@@ -1,5 +1,6 @@
 package com.mtg.mtgwalletbe.service.dto;
 
+import com.mtg.mtgwalletbe.enums.Status;
 import com.mtg.mtgwalletbe.enums.TransactionType;
 import lombok.Builder;
 import lombok.Data;
@@ -11,5 +12,7 @@ public class CategoryDto {
     private String name;
     private TransactionType transactionType;
     private Long userId;
-    private CategoryDto parentCategory;
+    private Long parentCategoryId;
+    private String parentCategoryName;
+    private Status status;
 }
