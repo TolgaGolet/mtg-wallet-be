@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -83,7 +84,7 @@ public class AccountServiceImpl implements AccountService {
         Account account = repository.findByIdAndStatus(id, Status.ACTIVE).orElseThrow(() -> new MtgWalletGenericException(GenericExceptionMessages.ACCOUNT_NOT_FOUND.getMessage()));
         userService.validateUsernameIfItsTheCurrentUser(account.getUser().getUsername());
         List<AccountDto> userAccounts = findAllByCurrentUserByStatus(Status.ACTIVE);
-        if (userAccounts.stream().anyMatch(existingAccount -> existingAccount.getName().equals(accountUpdateRequest.getName()))) {
+        if (userAccounts.stream().anyMatch(existingAccount -> !Objects.equals(existingAccount.getId(), id) && existingAccount.getName().equals(accountUpdateRequest.getName()))) {
             throw new MtgWalletGenericException(GenericExceptionMessages.ACCOUNT_NAME_ALREADY_EXISTS.getMessage());
         }
         account.setName(accountUpdateRequest.getName());
