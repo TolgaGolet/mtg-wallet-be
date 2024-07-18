@@ -9,7 +9,6 @@ import com.mtg.mtgwalletbe.enums.Status;
 import com.mtg.mtgwalletbe.exception.MtgWalletGenericException;
 import com.mtg.mtgwalletbe.mapper.AccountServiceMapper;
 import com.mtg.mtgwalletbe.service.AccountService;
-import com.mtg.mtgwalletbe.service.TransactionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -24,7 +23,6 @@ import static com.mtg.mtgwalletbe.service.AccountServiceImpl.MAX_ALLOWED_ACCOUNT
 @RequiredArgsConstructor
 public class AccountApi {
     private final AccountService accountService;
-    private final TransactionService transactionService;
     private final AccountServiceMapper accountServiceMapper;
 
     @PostMapping("/create")

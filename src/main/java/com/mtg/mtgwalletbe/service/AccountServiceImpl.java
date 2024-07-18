@@ -108,4 +108,13 @@ public class AccountServiceImpl implements AccountService {
         account.setStatus(Status.DELETED);
         repository.save(account);
     }
+
+    @Override
+    public BigDecimal getTotalBalanceByCurrentUserAndCurrency(Currency currency) {
+        List<AccountDto> userAccounts = findAllByCurrentUserByStatus(Status.ACTIVE);
+        if (userAccounts.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+        return userAccounts.stream().filter(accountDto -> Objects.equals(accountDto.getCurrency(), currency)).map(AccountDto::getBalance).reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
 }
