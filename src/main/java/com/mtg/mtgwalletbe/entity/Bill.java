@@ -2,7 +2,6 @@ package com.mtg.mtgwalletbe.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.mtg.mtgwalletbe.entity.auditing.Auditable;
-import com.mtg.mtgwalletbe.enums.RecurrenceType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -32,9 +31,9 @@ public class Bill extends Auditable {
     private BigDecimal amount;
     @NotNull
     private LocalDateTime nextPaymentDateTime;
-    @NotNull
-    @Column(length = 10)
-    private RecurrenceType recurrenceType;
+    //@NotNull
+    //@Column(length = 10)
+    //private RecurrenceType recurrenceType;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     @JsonIgnore

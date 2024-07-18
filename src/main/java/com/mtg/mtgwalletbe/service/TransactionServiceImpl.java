@@ -3,6 +3,7 @@ package com.mtg.mtgwalletbe.service;
 import com.mtg.mtgwalletbe.api.request.TransactionCreateRequest;
 import com.mtg.mtgwalletbe.api.request.TransactionSearchRequest;
 import com.mtg.mtgwalletbe.entity.Transaction;
+import com.mtg.mtgwalletbe.enums.Currency;
 import com.mtg.mtgwalletbe.enums.TransactionType;
 import com.mtg.mtgwalletbe.exception.MtgWalletGenericException;
 import com.mtg.mtgwalletbe.exception.enums.GenericExceptionMessages;
@@ -18,6 +19,9 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Objects;
 
 @Service
@@ -69,6 +73,15 @@ public class TransactionServiceImpl implements TransactionService {
         Specification<Transaction> specification = TransactionSpecification.search(request);
         Page<Transaction> transactions = repository.findAll(specification, pageable);
         return transactions.map(mapper::toTransactionDto);
+    }
+
+    @Override
+    public BigDecimal getProfitLossByCurrentUserAndDateIntervalAndCurrency(LocalDateTime startDate, LocalDateTime endDate, Currency currency) {
+        if (startDate == null || endDate == null || currency == null) {
+            throw new IllegalArgumentException();
+        }
+        WalletUserBasicDto walletUserDto = userService.getCurrentLoggedInUser();
+        return repository.getProfitLossByUserIdAndDateIntervalAndCurrency(walletUserDto.getId(), startDate, endDate, currency, TransactionType.EXPENSE, List.of(TransactionType.EXPENSE, TransactionType.INCOME)).orElse(BigDecimal.ZERO);
     }
 
     private void validateTransaction(ValidateTransactionDto validateTransactionDto) throws MtgWalletGenericException {
