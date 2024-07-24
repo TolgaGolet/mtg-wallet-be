@@ -2,6 +2,7 @@ package com.mtg.mtgwalletbe.service;
 
 import com.mtg.mtgwalletbe.api.request.TransactionCreateRequest;
 import com.mtg.mtgwalletbe.api.request.TransactionSearchRequest;
+import com.mtg.mtgwalletbe.api.response.TransactionCreateScreenEnumResponse;
 import com.mtg.mtgwalletbe.enums.Currency;
 import com.mtg.mtgwalletbe.exception.MtgWalletGenericException;
 import com.mtg.mtgwalletbe.service.dto.TransactionDto;
@@ -17,4 +18,6 @@ public interface TransactionService {
     Page<TransactionDto> search(TransactionSearchRequest request, Pageable pageable);
 
     BigDecimal getProfitLossByCurrentUserAndDateIntervalAndCurrency(LocalDateTime startDate, LocalDateTime endDate, Currency currency);
+
+    TransactionCreateScreenEnumResponse getTransactionCreateScreenEnums();
 }

@@ -7,7 +7,6 @@ import com.mtg.mtgwalletbe.api.request.PayeeUpdateRequest;
 import com.mtg.mtgwalletbe.api.response.CategoryResponse;
 import com.mtg.mtgwalletbe.api.response.PayeeCreateScreenEnumResponse;
 import com.mtg.mtgwalletbe.api.response.PayeeResponse;
-import com.mtg.mtgwalletbe.api.response.SelectResponse;
 import com.mtg.mtgwalletbe.entity.Category;
 import com.mtg.mtgwalletbe.entity.Payee;
 import com.mtg.mtgwalletbe.enums.Status;
@@ -119,9 +118,8 @@ public class PayeeServiceImpl implements PayeeService {
     @Override
     public PayeeCreateScreenEnumResponse getPayeeCreateScreenEnums() {
         PayeeCreateScreenEnumResponse response = new PayeeCreateScreenEnumResponse();
-        Page<CategoryResponse> categoriesPage = categoryService.search(new CategorySearchRequest(), Status.ACTIVE, PageRequest.of(0, MAX_ALLOWED_CATEGORY_COUNT, Sort.by("name").ascending()));
-        List<SelectResponse> categories = categoriesPage.getContent().stream().map(categoryServiceMapper::toSelectResponse).toList();
-        response.setCategoryList(categories);
+        Page<CategoryResponse> categoriesPage = categoryService.search(CategorySearchRequest.builder().build(), Status.ACTIVE, PageRequest.of(0, MAX_ALLOWED_CATEGORY_COUNT, Sort.by("name").ascending()));
+        response.setCategoryList(categoriesPage);
         return response;
     }
 

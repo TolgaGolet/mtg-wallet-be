@@ -45,7 +45,7 @@ public class TransactionSpecification {
             if (request.getNotes() != null) {
                 predicates.add(criteriaBuilder.like(
                         criteriaBuilder.lower(root.get("notes")),
-                        "%" + request.getNotes().toLowerCase() + "%"
+                        "%" + request.getNotes().trim().toLowerCase() + "%"
                 ));
             }
             if (request.getUserId() != null) {
