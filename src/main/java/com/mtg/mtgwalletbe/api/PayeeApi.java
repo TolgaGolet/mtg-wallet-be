@@ -31,6 +31,12 @@ public class PayeeApi {
         return ResponseEntity.ok(payeeServiceMapper.toPayeeResponse(payeeService.create(payeeCreateRequest)));
     }
 
+    @PostMapping("/create-defaults")
+    public ResponseEntity<Void> createDefaults() throws MtgWalletGenericException {
+        payeeService.createDefaults();
+        return ResponseEntity.ok().build();
+    }
+
     @PostMapping("/search")
     public ResponseEntity<Page<PayeeResponse>> search(@RequestBody @Validated PayeeSearchRequest request, @RequestParam(name = "pageNo", defaultValue = "0") int pageNo) {
         return ResponseEntity.ok(payeeService.search(request, Status.ACTIVE, PageRequest.of(pageNo, DEFAULT_PAGE_SIZE, Sort.by("name").ascending())));

@@ -13,6 +13,4 @@ public class PayeeUpdateRequest {
     @Size(min = 3, max = 50)
     @Pattern(regexp = PAYEE_NAME_REGULAR_EXPRESSION)
     private String name;
-    @NotNull
-    private Long categoryId;
 }

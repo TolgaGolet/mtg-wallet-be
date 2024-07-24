@@ -25,4 +25,5 @@ public class WalletUserDto {
     private List<Category> categories = new ArrayList<>();
     private Payee defaultPayeeForExpense;
     private Payee defaultPayeeForIncome;
+    private Boolean isDefaultsCreated;
 }

@@ -28,6 +28,7 @@ public interface CategoryServiceMapper {
     }
 
     @Mapping(source = "user.id", target = "userId")
+    @Mapping(source = "user.username", target = "username")
     @Mapping(source = "parentCategory.id", target = "parentCategoryId")
     @Mapping(source = "parentCategory.name", target = "parentCategoryName")
     CategoryDto toCategoryDto(Category categoryEntity);
