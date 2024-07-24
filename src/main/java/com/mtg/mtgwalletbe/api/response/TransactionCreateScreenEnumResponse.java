@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class PayeeCreateScreenEnumResponse {
+public class TransactionCreateScreenEnumResponse {
     private Page<CategoryResponse> categoryList;
+    private Page<AccountResponse> accountList;
 }

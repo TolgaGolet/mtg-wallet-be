@@ -35,6 +35,8 @@ public class Category extends Auditable {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private WalletUser user;
+    @NotNull
+    private Boolean isParent;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_category_id")
     @JsonIgnore

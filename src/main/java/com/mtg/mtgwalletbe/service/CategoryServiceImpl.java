@@ -54,13 +54,19 @@ public class CategoryServiceImpl implements CategoryService {
         }
         if (categoryCreateRequest.getParentCategoryId() != null) {
             parentCategoryDto = getCategory(categoryCreateRequest.getParentCategoryId());
-        }
-        if (categoryCreateRequest.getParentCategoryId() != null && parentCategoryDto == null) {
-            throw new MtgWalletGenericException(GenericExceptionMessages.CATEGORY_NOT_FOUND.getMessage());
+            if (parentCategoryDto == null) {
+                throw new MtgWalletGenericException(GenericExceptionMessages.CATEGORY_NOT_FOUND.getMessage());
+            }
+            if (parentCategoryDto.getParentCategoryId() != null) {
+                throw new MtgWalletGenericException(GenericExceptionMessages.CATEGORY_WITH_PARENT_CATEGORY_NOT_ALLOWED_AS_PARENT_CATEGORY.getMessage());
+            }
+            setIsParentTrueById(categoryCreateRequest.getParentCategoryId());
         }
         CategoryDto categoryDtoToSave = CategoryDto.builder().name(categoryCreateRequest.getName())
                 .transactionType(transactionType)
-                .userId(walletUserDto.getId()).parentCategoryId(parentCategoryDto.getId()).parentCategoryName(parentCategoryDto.getName()).status(Status.ACTIVE).build();
+                .userId(walletUserDto.getId())
+                .parentCategoryId(parentCategoryDto != null ? parentCategoryDto.getId() : null)
+                .isParent(Boolean.FALSE).status(Status.ACTIVE).build();
         return mapper.toCategoryDto(repository.save(mapper.toCategoryEntity(categoryDtoToSave)));
     }
 
@@ -83,9 +89,44 @@ public class CategoryServiceImpl implements CategoryService {
         }
         category.setName(categoryUpdateRequest.getName());
         category.setTransactionType(TransactionType.of(categoryUpdateRequest.getTransactionTypeValue()));
-        Category parentCategory = categoryUpdateRequest.getParentCategoryId() != null ? mapper.toCategoryEntity(getCategory(categoryUpdateRequest.getParentCategoryId())) : null;
+        Category parentCategory = null;
+        if (categoryUpdateRequest.getParentCategoryId() != null && category.getIsParent()) {
+            throw new MtgWalletGenericException(GenericExceptionMessages.PARENT_CATEGORY_CANT_HAVE_PARENT_CATEGORY.getMessage());
+        }
+        if (categoryUpdateRequest.getParentCategoryId() != null) {
+            parentCategory = mapper.toCategoryEntity(getCategory(categoryUpdateRequest.getParentCategoryId()));
+            if (parentCategory.getParentCategory() != null) {
+                throw new MtgWalletGenericException(GenericExceptionMessages.CATEGORY_WITH_PARENT_CATEGORY_NOT_ALLOWED_AS_PARENT_CATEGORY.getMessage());
+            }
+            setIsParentTrueById(parentCategory.getId());
+        } else if (category.getParentCategory() != null) {
+            setIsParentFalseByIdIfNotParent(category.getParentCategory().getId(), id);
+        }
         category.setParentCategory(parentCategory);
         return mapper.toCategoryDto(repository.save(category));
+    }
+
+    private void setIsParentTrueById(Long id) throws MtgWalletGenericException {
+        Category category = repository.findById(id).orElseThrow(() -> new MtgWalletGenericException(GenericExceptionMessages.CATEGORY_NOT_FOUND.getMessage()));
+        userService.validateUsernameIfItsTheCurrentUser(category.getUser().getUsername());
+        category.setIsParent(Boolean.TRUE);
+        repository.save(category);
+    }
+
+    private void setIsParentFalseByIdIfNotParent(Long id, Long oldChildId) throws MtgWalletGenericException {
+        Category category = repository.findById(id).orElseThrow(() -> new MtgWalletGenericException(GenericExceptionMessages.CATEGORY_NOT_FOUND.getMessage()));
+        userService.validateUsernameIfItsTheCurrentUser(category.getUser().getUsername());
+        boolean isParent = findAllByCurrentUserByStatus(Status.ACTIVE)
+                .stream()
+                .anyMatch(category1 -> category1.getParentCategoryId() != null &&
+                        !category1.getId().equals(id) &&
+                        !category1.getId().equals(oldChildId) &&
+                        category1.getParentCategoryId().equals(category.getId()));
+        if (isParent) {
+            return;
+        }
+        category.setIsParent(Boolean.FALSE);
+        repository.save(category);
     }
 
     @Override
@@ -115,7 +156,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public CategoryCreateScreenEnumResponse getCategoryCreateScreenEnums() {
         CategoryCreateScreenEnumResponse response = new CategoryCreateScreenEnumResponse();
-        Page<CategoryResponse> parentCategoriesPage = search(new CategorySearchRequest(), Status.ACTIVE, PageRequest.of(0, MAX_ALLOWED_CATEGORY_COUNT, Sort.by("name").ascending()));
+        Page<CategoryResponse> parentCategoriesPage = search(CategorySearchRequest.builder().childrenOnly(true).build(), Status.ACTIVE, PageRequest.of(0, MAX_ALLOWED_CATEGORY_COUNT, Sort.by("name").ascending()));
         List<CategorySelectResponse> parentCategories = parentCategoriesPage.getContent().stream().map(mapper::toCategorySelectResponse).toList();
         response.setParentCategoryList(parentCategories);
         return response;

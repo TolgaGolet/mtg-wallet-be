@@ -26,7 +26,7 @@ public class AccountSpecification {
             if (request.getName() != null) {
                 predicates.add(criteriaBuilder.like(
                         criteriaBuilder.lower(root.get("name")),
-                        "%" + request.getName().toLowerCase() + "%"
+                        "%" + request.getName().trim().toLowerCase() + "%"
                 ));
             }
             if (request.getTypeValue() != null) {

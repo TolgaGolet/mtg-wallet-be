@@ -28,6 +28,8 @@ public enum GenericExceptionMessages {
     ACCOUNT_NAME_ALREADY_EXISTS("Account name already exists"),
     ACCOUNTS_LIMIT_EXCEEDED("User accounts limit exceeded"),
     CATEGORIES_LIMIT_EXCEEDED("Categories limit exceeded"),
+    PARENT_CATEGORY_CANT_HAVE_PARENT_CATEGORY("Parent category can't have a parent category"),
+    CATEGORY_WITH_PARENT_CATEGORY_NOT_ALLOWED_AS_PARENT_CATEGORY("Category with parent category is not allowed as parent category"),
     PAYEES_LIMIT_EXCEEDED("Payees limit exceeded"),
     CATEGORY_NOT_FOUND("Category not found"),
     CATEGORY_NAME_ALREADY_EXISTS("Category name already exists"),
@@ -35,6 +37,7 @@ public enum GenericExceptionMessages {
     TARGET_ACCOUNT_ID_CANT_BE_EMPTY_FOR_TRANSFERS("Target account id can't be empty for transfer transactions"),
     TARGET_ACCOUNT_ID_SHOULD_BE_EMPTY_FOR_EXPENSES_AND_INCOMES("Target account id should be empty for expense and income transactions"),
     SOURCE_ACCOUNT_ID_CANT_BE_THE_SAME_AS_TARGET_ACCOUNT_ID("Source account id can't be the same as target account id"),
+    TARGET_ACCOUNT_CURRENCY_SHOULD_BE_THE_SAME_AS_SOURCE_ACCOUNT_CURRENCY("Target account currency should be the same as source account currency"),
     PAYEE_CATEGORY_TRANSACTION_TYPE_NOT_VALID("Payee category transaction type not valid"),
     NOT_AUTHORIZED_TO_PERFORM("User not authorized to perform this action");
 

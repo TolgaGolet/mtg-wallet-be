@@ -12,6 +12,7 @@ public class CategoryDto {
     private String name;
     private TransactionType transactionType;
     private Long userId;
+    private Boolean isParent;
     private Long parentCategoryId;
     private String parentCategoryName;
     private Status status;

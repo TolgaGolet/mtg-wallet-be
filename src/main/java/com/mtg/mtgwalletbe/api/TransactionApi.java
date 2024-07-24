@@ -3,6 +3,7 @@ package com.mtg.mtgwalletbe.api;
 import com.mtg.mtgwalletbe.api.request.TransactionCreateRequest;
 import com.mtg.mtgwalletbe.api.request.TransactionSearchRequest;
 import com.mtg.mtgwalletbe.api.response.TransactionCreateResponse;
+import com.mtg.mtgwalletbe.api.response.TransactionCreateScreenEnumResponse;
 import com.mtg.mtgwalletbe.exception.MtgWalletGenericException;
 import com.mtg.mtgwalletbe.mapper.TransactionServiceMapper;
 import com.mtg.mtgwalletbe.service.TransactionService;
@@ -32,5 +33,10 @@ public class TransactionApi {
     @PostMapping("/search")
     public ResponseEntity<Page<TransactionDto>> search(@RequestBody @Validated TransactionSearchRequest request, @RequestParam(name = "pageNo", defaultValue = "0") int pageNo) {
         return ResponseEntity.ok(transactionService.search(request, PageRequest.of(pageNo, DEFAULT_PAGE_SIZE, Sort.by("dateTime").descending())));
+    }
+
+    @GetMapping("/create/enums")
+    public ResponseEntity<TransactionCreateScreenEnumResponse> getTransactionCreateScreenEnums() {
+        return ResponseEntity.ok(transactionService.getTransactionCreateScreenEnums());
     }
 }

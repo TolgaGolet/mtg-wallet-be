@@ -3,6 +3,7 @@ package com.mtg.mtgwalletbe.specification;
 import com.mtg.mtgwalletbe.api.request.PayeeSearchRequest;
 import com.mtg.mtgwalletbe.entity.Payee;
 import com.mtg.mtgwalletbe.enums.Status;
+import com.mtg.mtgwalletbe.enums.TransactionType;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -21,7 +22,7 @@ public class PayeeSpecification {
             if (request.getName() != null) {
                 predicates.add(criteriaBuilder.like(
                         criteriaBuilder.lower(root.get("name")),
-                        "%" + request.getName().toLowerCase() + "%"
+                        "%" + request.getName().trim().toLowerCase() + "%"
                 ));
             }
             if (request.getCategoryId() != null) {
@@ -29,6 +30,9 @@ public class PayeeSpecification {
             }
             if (request.getUserId() != null) {
                 predicates.add(criteriaBuilder.equal(root.get("user").get("id"), request.getUserId()));
+            }
+            if (request.getTransactionTypeValue() != null) {
+                predicates.add(criteriaBuilder.equal(root.get("category").get("transactionType"), TransactionType.of(request.getTransactionTypeValue())));
             }
             if (status != null) {
                 predicates.add(criteriaBuilder.equal(root.get("status"), status));

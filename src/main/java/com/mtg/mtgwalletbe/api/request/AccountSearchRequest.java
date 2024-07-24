@@ -2,9 +2,11 @@ package com.mtg.mtgwalletbe.api.request;
 
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import lombok.Builder;
 import lombok.Data;
 
 @Data
+@Builder
 public class AccountSearchRequest {
     private Long id;
     private Long userId;

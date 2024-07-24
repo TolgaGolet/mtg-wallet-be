@@ -1,20 +1,24 @@
 package com.mtg.mtgwalletbe.service;
 
-import com.mtg.mtgwalletbe.api.request.TransactionCreateRequest;
-import com.mtg.mtgwalletbe.api.request.TransactionSearchRequest;
+import com.mtg.mtgwalletbe.api.request.*;
+import com.mtg.mtgwalletbe.api.response.AccountResponse;
+import com.mtg.mtgwalletbe.api.response.CategoryResponse;
+import com.mtg.mtgwalletbe.api.response.TransactionCreateScreenEnumResponse;
 import com.mtg.mtgwalletbe.entity.Transaction;
 import com.mtg.mtgwalletbe.enums.Currency;
+import com.mtg.mtgwalletbe.enums.Status;
 import com.mtg.mtgwalletbe.enums.TransactionType;
 import com.mtg.mtgwalletbe.exception.MtgWalletGenericException;
 import com.mtg.mtgwalletbe.exception.enums.GenericExceptionMessages;
 import com.mtg.mtgwalletbe.mapper.TransactionServiceMapper;
-import com.mtg.mtgwalletbe.mapper.UserServiceMapper;
 import com.mtg.mtgwalletbe.repository.TransactionRepository;
 import com.mtg.mtgwalletbe.service.dto.*;
 import com.mtg.mtgwalletbe.specification.TransactionSpecification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,22 +28,25 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 
+import static com.mtg.mtgwalletbe.service.AccountServiceImpl.MAX_ALLOWED_ACCOUNT_COUNT;
+import static com.mtg.mtgwalletbe.service.CategoryServiceImpl.MAX_ALLOWED_CATEGORY_COUNT;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class TransactionServiceImpl implements TransactionService {
     private final TransactionRepository repository;
     private final TransactionServiceMapper mapper;
-    private final UserServiceMapper userServiceMapper;
     private final PayeeService payeeService;
     private final AccountService accountService;
     private final UserService userService;
+    private final CategoryService categoryService;
 
     @Override
     public TransactionDto create(TransactionCreateRequest transactionCreateRequest) throws MtgWalletGenericException {
         WalletUserBasicDto walletUserDto = userService.getCurrentLoggedInUser();
-        TransactionType transactionType = TransactionType.of(transactionCreateRequest.getTypeKey());
-        PayeeDto payeeDto = payeeService.getPayee(transactionCreateRequest.getPayeeId());
+        TransactionType transactionType = TransactionType.of(transactionCreateRequest.getTypeValue());
+        PayeeDto payeeDto = getOrCreatePayeeDto(transactionCreateRequest);
         AccountDto sourceAccountDto = accountService.getAccountById(transactionCreateRequest.getSourceAccountId());
         AccountDto targetAccountDto = transactionCreateRequest.getTargetAccountId() != null ? accountService.getAccountById(transactionCreateRequest.getTargetAccountId()) : null;
         validateTransaction(ValidateTransactionDto.builder()
@@ -66,6 +73,13 @@ public class TransactionServiceImpl implements TransactionService {
         return mapper.toTransactionDto(repository.save(mapper.toTransactionEntity(transactionDtoToSave)));
     }
 
+    private PayeeDto getOrCreatePayeeDto(TransactionCreateRequest transactionCreateRequest) throws MtgWalletGenericException {
+        if (transactionCreateRequest.getPayeeId() == -1L) {
+            return payeeService.create(PayeeCreateRequest.builder().name(transactionCreateRequest.getPayeeName()).categoryId(transactionCreateRequest.getCategoryId()).build());
+        }
+        return payeeService.getPayee(transactionCreateRequest.getPayeeId());
+    }
+
     @Override
     public Page<TransactionDto> search(TransactionSearchRequest request, Pageable pageable) {
         WalletUserBasicDto walletUserDto = userService.getCurrentLoggedInUser();
@@ -82,6 +96,16 @@ public class TransactionServiceImpl implements TransactionService {
         }
         WalletUserBasicDto walletUserDto = userService.getCurrentLoggedInUser();
         return repository.getProfitLossByUserIdAndDateIntervalAndCurrency(walletUserDto.getId(), startDate, endDate, currency, TransactionType.EXPENSE, List.of(TransactionType.EXPENSE, TransactionType.INCOME)).orElse(BigDecimal.ZERO);
+    }
+
+    @Override
+    public TransactionCreateScreenEnumResponse getTransactionCreateScreenEnums() {
+        TransactionCreateScreenEnumResponse response = new TransactionCreateScreenEnumResponse();
+        Page<CategoryResponse> categoriesPage = categoryService.search(CategorySearchRequest.builder().build(), Status.ACTIVE, PageRequest.of(0, MAX_ALLOWED_CATEGORY_COUNT, Sort.by("name").ascending()));
+        Page<AccountResponse> accountsPage = accountService.search(AccountSearchRequest.builder().build(), Status.ACTIVE, PageRequest.of(0, MAX_ALLOWED_ACCOUNT_COUNT, Sort.by("name").ascending()));
+        response.setCategoryList(categoriesPage);
+        response.setAccountList(accountsPage);
+        return response;
     }
 
     private void validateTransaction(ValidateTransactionDto validateTransactionDto) throws MtgWalletGenericException {
@@ -108,6 +132,10 @@ public class TransactionServiceImpl implements TransactionService {
         if (validateTransactionDto.getTransactionType() == TransactionType.TRANSFER
                 && Objects.equals(validateTransactionDto.getTransactionCreateRequest().getSourceAccountId(), validateTransactionDto.getTransactionCreateRequest().getTargetAccountId())) {
             throw new MtgWalletGenericException(GenericExceptionMessages.SOURCE_ACCOUNT_ID_CANT_BE_THE_SAME_AS_TARGET_ACCOUNT_ID.getMessage());
+        }
+        if (validateTransactionDto.getTransactionType() == TransactionType.TRANSFER
+                && validateTransactionDto.getTargetAccountDto().getCurrency() != validateTransactionDto.getSourceAccountDto().getCurrency()) {
+            throw new MtgWalletGenericException(GenericExceptionMessages.TARGET_ACCOUNT_CURRENCY_SHOULD_BE_THE_SAME_AS_SOURCE_ACCOUNT_CURRENCY.getMessage());
         }
     }
 

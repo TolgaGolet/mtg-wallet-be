@@ -12,6 +12,7 @@ public class CategoryResponse {
     private Long id;
     private String name;
     private TransactionType transactionType;
+    private Boolean isParent;
     private Long parentCategoryId;
     private String parentCategoryName;
 }

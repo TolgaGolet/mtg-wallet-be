@@ -22,7 +22,7 @@ public class CategorySpecification {
             if (request.getName() != null) {
                 predicates.add(criteriaBuilder.like(
                         criteriaBuilder.lower(root.get("name")),
-                        "%" + request.getName().toLowerCase() + "%"
+                        "%" + request.getName().trim().toLowerCase() + "%"
                 ));
             }
             if (request.getTransactionTypeValue() != null) {
@@ -31,7 +31,10 @@ public class CategorySpecification {
             if (request.getUserId() != null) {
                 predicates.add(criteriaBuilder.equal(root.get("user").get("id"), request.getUserId()));
             }
-            if (request.getParentCategoryId() != null) {
+            if (request.isChildrenOnly()) {
+                predicates.add(criteriaBuilder.isNull(root.get("parentCategory")));
+            }
+            if (!request.isChildrenOnly() && request.getParentCategoryId() != null) {
                 predicates.add(criteriaBuilder.equal(root.get("parentCategory").get("id"), request.getParentCategoryId()));
             }
             if (status != null) {
