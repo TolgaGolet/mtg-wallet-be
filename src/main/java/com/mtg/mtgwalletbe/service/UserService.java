@@ -24,7 +24,7 @@ public interface UserService {
 
     public WalletUserDto getCurrentLoggedInUserFull();
 
-    public void validateUsernameIfItsTheCurrentUser(String username) throws MtgWalletGenericException;
+    public void validateUserIdIfItsTheCurrentUser(Long userId) throws MtgWalletGenericException;
 
     WalletUserDto updateUser(WalletUserDto walletUserDto) throws MtgWalletGenericException;
 

@@ -49,7 +49,8 @@ public class CategoryServiceImpl implements CategoryService {
         if (userCategories.size() >= MAX_ALLOWED_CATEGORY_COUNT) {
             throw new MtgWalletGenericException(GenericExceptionMessages.CATEGORIES_LIMIT_EXCEEDED.getMessage());
         }
-        if (userCategories.stream().anyMatch(category -> category.getName().equals(categoryCreateRequest.getName()))) {
+        if (userCategories.stream().anyMatch(category -> category.getTransactionType().equals(transactionType)
+                && category.getName().equals(categoryCreateRequest.getName()))) {
             throw new MtgWalletGenericException(GenericExceptionMessages.CATEGORY_NAME_ALREADY_EXISTS.getMessage());
         }
         if (categoryCreateRequest.getParentCategoryId() != null) {
@@ -82,13 +83,14 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public CategoryDto update(CategoryUpdateRequest categoryUpdateRequest, Long id) throws MtgWalletGenericException {
         Category category = repository.findByIdAndStatus(id, Status.ACTIVE).orElseThrow(() -> new MtgWalletGenericException(GenericExceptionMessages.CATEGORY_NOT_FOUND.getMessage()));
-        userService.validateUsernameIfItsTheCurrentUser(category.getUser().getUsername());
+        userService.validateUserIdIfItsTheCurrentUser(category.getUser().getId());
         List<CategoryDto> userCategories = findAllByCurrentUserByStatus(Status.ACTIVE);
-        if (userCategories.stream().anyMatch(existingCategory -> !Objects.equals(existingCategory.getId(), id) && existingCategory.getName().equals(categoryUpdateRequest.getName()))) {
+        if (userCategories.stream().anyMatch(existingCategory -> !Objects.equals(existingCategory.getId(), id)
+                && existingCategory.getTransactionType().equals(category.getTransactionType())
+                && existingCategory.getName().equals(categoryUpdateRequest.getName()))) {
             throw new MtgWalletGenericException(GenericExceptionMessages.CATEGORY_NAME_ALREADY_EXISTS.getMessage());
         }
         category.setName(categoryUpdateRequest.getName());
-        category.setTransactionType(TransactionType.of(categoryUpdateRequest.getTransactionTypeValue()));
         Category parentCategory = null;
         if (categoryUpdateRequest.getParentCategoryId() != null && category.getIsParent()) {
             throw new MtgWalletGenericException(GenericExceptionMessages.PARENT_CATEGORY_CANT_HAVE_PARENT_CATEGORY.getMessage());
@@ -108,14 +110,14 @@ public class CategoryServiceImpl implements CategoryService {
 
     private void setIsParentTrueById(Long id) throws MtgWalletGenericException {
         Category category = repository.findById(id).orElseThrow(() -> new MtgWalletGenericException(GenericExceptionMessages.CATEGORY_NOT_FOUND.getMessage()));
-        userService.validateUsernameIfItsTheCurrentUser(category.getUser().getUsername());
+        userService.validateUserIdIfItsTheCurrentUser(category.getUser().getId());
         category.setIsParent(Boolean.TRUE);
         repository.save(category);
     }
 
     private void setIsParentFalseByIdIfNotParent(Long id, Long oldChildId) throws MtgWalletGenericException {
         Category category = repository.findById(id).orElseThrow(() -> new MtgWalletGenericException(GenericExceptionMessages.CATEGORY_NOT_FOUND.getMessage()));
-        userService.validateUsernameIfItsTheCurrentUser(category.getUser().getUsername());
+        userService.validateUserIdIfItsTheCurrentUser(category.getUser().getId());
         boolean isParent = findAllByCurrentUserByStatus(Status.ACTIVE)
                 .stream()
                 .anyMatch(category1 -> category1.getParentCategoryId() != null &&
@@ -132,7 +134,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public void delete(Long id) throws MtgWalletGenericException {
         Category category = repository.findById(id).orElseThrow(() -> new MtgWalletGenericException(GenericExceptionMessages.CATEGORY_NOT_FOUND.getMessage()));
-        userService.validateUsernameIfItsTheCurrentUser(category.getUser().getUsername());
+        userService.validateUserIdIfItsTheCurrentUser(category.getUser().getId());
         category.setName("Deleted Category");
         category.setStatus(Status.DELETED);
         repository.save(category);
@@ -148,7 +150,7 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryDto getCategory(Long id) throws MtgWalletGenericException {
         Optional<Category> category = repository.findById(id);
         if (category.isPresent()) {
-            userService.validateUsernameIfItsTheCurrentUser(category.get().getUser().getUsername());
+            userService.validateUserIdIfItsTheCurrentUser(category.get().getUser().getId());
         }
         return category.map(mapper::toCategoryDto).orElse(null);
     }

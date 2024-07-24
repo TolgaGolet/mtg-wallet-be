@@ -86,6 +86,8 @@ public class WalletUser extends Auditable implements UserDetails {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Payee defaultPayeeForIncome;
+    @NotNull
+    private Boolean isDefaultsCreated;
 
     // TODO add columns and functionalities for isCredentialsNonExpired, isEnabled etc.
 

@@ -19,6 +19,7 @@ public enum GenericExceptionMessages {
     ROLE_NOT_FOUND("Role not found"),
     USERNAME_ALREADY_EXISTS("Username is already taken. Please choose another username"),
     USERNAME_CANT_BE_NULL("Username can't be null"),
+    USER_ID_CANT_BE_NULL("User ID can't be null"),
     EMAIL_ALREADY_EXISTS("Email is already registered. Please choose another email address"),
     SYSTEM_USERNAME_NOT_ALLOWED("System username cannot be used"),
     ROLE_NAME_ALREADY_EXISTS("Role name already exists"),

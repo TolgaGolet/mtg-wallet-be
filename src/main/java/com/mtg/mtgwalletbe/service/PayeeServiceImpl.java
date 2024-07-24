@@ -1,13 +1,9 @@
 package com.mtg.mtgwalletbe.service;
 
-import com.mtg.mtgwalletbe.api.request.CategorySearchRequest;
-import com.mtg.mtgwalletbe.api.request.PayeeCreateRequest;
-import com.mtg.mtgwalletbe.api.request.PayeeSearchRequest;
-import com.mtg.mtgwalletbe.api.request.PayeeUpdateRequest;
+import com.mtg.mtgwalletbe.api.request.*;
 import com.mtg.mtgwalletbe.api.response.CategoryResponse;
 import com.mtg.mtgwalletbe.api.response.PayeeCreateScreenEnumResponse;
 import com.mtg.mtgwalletbe.api.response.PayeeResponse;
-import com.mtg.mtgwalletbe.entity.Category;
 import com.mtg.mtgwalletbe.entity.Payee;
 import com.mtg.mtgwalletbe.enums.Status;
 import com.mtg.mtgwalletbe.enums.TransactionType;
@@ -69,6 +65,71 @@ public class PayeeServiceImpl implements PayeeService {
     }
 
     @Override
+    public void createDefaults() throws MtgWalletGenericException {
+        if (!Objects.equals(userService.getCurrentLoggedInUser().getIsDefaultsCreated(), Boolean.TRUE)) {
+            // Expense
+            CategoryDto autoCategoryDto = categoryService.create(CategoryCreateRequest.builder().name("Auto").transactionTypeValue(TransactionType.EXPENSE.getValue()).build());
+            CategoryDto gasCategoryDto = categoryService.create(CategoryCreateRequest.builder().name("Gas").transactionTypeValue(TransactionType.EXPENSE.getValue()).parentCategoryId(autoCategoryDto.getId()).build());
+            create(PayeeCreateRequest.builder().name("Shell").categoryId(gasCategoryDto.getId()).build());
+            categoryService.create(CategoryCreateRequest.builder().name("Service").transactionTypeValue(TransactionType.EXPENSE.getValue()).parentCategoryId(autoCategoryDto.getId()).build());
+            CategoryDto billCategoryDto = categoryService.create(CategoryCreateRequest.builder().name("Bill").transactionTypeValue(TransactionType.EXPENSE.getValue()).build());
+            categoryService.create(CategoryCreateRequest.builder().name("Electricity").transactionTypeValue(TransactionType.EXPENSE.getValue()).parentCategoryId(billCategoryDto.getId()).build());
+            categoryService.create(CategoryCreateRequest.builder().name("Internet").transactionTypeValue(TransactionType.EXPENSE.getValue()).parentCategoryId(billCategoryDto.getId()).build());
+            CategoryDto phoneCategoryDto = categoryService.create(CategoryCreateRequest.builder().name("Phone").transactionTypeValue(TransactionType.EXPENSE.getValue()).parentCategoryId(billCategoryDto.getId()).build());
+            create(PayeeCreateRequest.builder().name("Türk Telekom").categoryId(phoneCategoryDto.getId()).build());
+            categoryService.create(CategoryCreateRequest.builder().name("Water").transactionTypeValue(TransactionType.EXPENSE.getValue()).parentCategoryId(billCategoryDto.getId()).build());
+            categoryService.create(CategoryCreateRequest.builder().name("Charity").transactionTypeValue(TransactionType.EXPENSE.getValue()).build());
+            CategoryDto clothingCategoryDto = categoryService.create(CategoryCreateRequest.builder().name("Clothing").transactionTypeValue(TransactionType.EXPENSE.getValue()).build());
+            create(PayeeCreateRequest.builder().name("Defacto").categoryId(clothingCategoryDto.getId()).build());
+            categoryService.create(CategoryCreateRequest.builder().name("Education").transactionTypeValue(TransactionType.EXPENSE.getValue()).build());
+            CategoryDto eatingOutCategoryDto = categoryService.create(CategoryCreateRequest.builder().name("Eating Out").transactionTypeValue(TransactionType.EXPENSE.getValue()).build());
+            CategoryDto fastFoodCategoryDto = categoryService.create(CategoryCreateRequest.builder().name("Fast Food").transactionTypeValue(TransactionType.EXPENSE.getValue()).parentCategoryId(eatingOutCategoryDto.getId()).build());
+            create(PayeeCreateRequest.builder().name("Burger King").categoryId(fastFoodCategoryDto.getId()).build());
+            categoryService.create(CategoryCreateRequest.builder().name("Electronics").transactionTypeValue(TransactionType.EXPENSE.getValue()).build());
+            CategoryDto entertainmentCategoryDto = categoryService.create(CategoryCreateRequest.builder().name("Entertainment").transactionTypeValue(TransactionType.EXPENSE.getValue()).build());
+            categoryService.create(CategoryCreateRequest.builder().name("Concert").transactionTypeValue(TransactionType.EXPENSE.getValue()).parentCategoryId(entertainmentCategoryDto.getId()).build());
+            CategoryDto digitalServicesCategoryDto = categoryService.create(CategoryCreateRequest.builder().name("Digital Services").transactionTypeValue(TransactionType.EXPENSE.getValue()).parentCategoryId(entertainmentCategoryDto.getId()).build());
+            create(PayeeCreateRequest.builder().name("Spotify").categoryId(digitalServicesCategoryDto.getId()).build());
+            create(PayeeCreateRequest.builder().name("Amazon Prime").categoryId(digitalServicesCategoryDto.getId()).build());
+            categoryService.create(CategoryCreateRequest.builder().name("Gifts").transactionTypeValue(TransactionType.EXPENSE.getValue()).build());
+            CategoryDto groceriesCategoryDto = categoryService.create(CategoryCreateRequest.builder().name("Groceries").transactionTypeValue(TransactionType.EXPENSE.getValue()).build());
+            create(PayeeCreateRequest.builder().name("Migros").categoryId(groceriesCategoryDto.getId()).build());
+            categoryService.create(CategoryCreateRequest.builder().name("Household").transactionTypeValue(TransactionType.EXPENSE.getValue()).build());
+            CategoryDto medicalCategoryDto = categoryService.create(CategoryCreateRequest.builder().name("Medical").transactionTypeValue(TransactionType.EXPENSE.getValue()).build());
+            categoryService.create(CategoryCreateRequest.builder().name("Hospital").transactionTypeValue(TransactionType.EXPENSE.getValue()).parentCategoryId(medicalCategoryDto.getId()).build());
+            categoryService.create(CategoryCreateRequest.builder().name("Pharmacy").transactionTypeValue(TransactionType.EXPENSE.getValue()).parentCategoryId(medicalCategoryDto.getId()).build());
+            categoryService.create(CategoryCreateRequest.builder().name("Others").transactionTypeValue(TransactionType.EXPENSE.getValue()).build());
+            CategoryDto personalCareCategoryDto = categoryService.create(CategoryCreateRequest.builder().name("Personal Care").transactionTypeValue(TransactionType.EXPENSE.getValue()).build());
+            categoryService.create(CategoryCreateRequest.builder().name("Hairdresser").transactionTypeValue(TransactionType.EXPENSE.getValue()).parentCategoryId(personalCareCategoryDto.getId()).build());
+            categoryService.create(CategoryCreateRequest.builder().name("Rent").transactionTypeValue(TransactionType.EXPENSE.getValue()).build());
+            categoryService.create(CategoryCreateRequest.builder().name("Tax").transactionTypeValue(TransactionType.EXPENSE.getValue()).build());
+            CategoryDto transportCategoryDto = categoryService.create(CategoryCreateRequest.builder().name("Transport").transactionTypeValue(TransactionType.EXPENSE.getValue()).build());
+            categoryService.create(CategoryCreateRequest.builder().name("Bus").transactionTypeValue(TransactionType.EXPENSE.getValue()).parentCategoryId(transportCategoryDto.getId()).build());
+            CategoryDto transportationCardCategoryDto = categoryService.create(CategoryCreateRequest.builder().name("Transportation Card").transactionTypeValue(TransactionType.EXPENSE.getValue()).parentCategoryId(transportCategoryDto.getId()).build());
+            create(PayeeCreateRequest.builder().name("Istanbul Card").categoryId(transportationCardCategoryDto.getId()).build());
+            categoryService.create(CategoryCreateRequest.builder().name("Travel").transactionTypeValue(TransactionType.EXPENSE.getValue()).build());
+            // Income
+            categoryService.create(CategoryCreateRequest.builder().name("Bonus").transactionTypeValue(TransactionType.INCOME.getValue()).build());
+            categoryService.create(CategoryCreateRequest.builder().name("Interest").transactionTypeValue(TransactionType.INCOME.getValue()).build());
+            CategoryDto investmentCategoryDto = categoryService.create(CategoryCreateRequest.builder().name("Investment").transactionTypeValue(TransactionType.INCOME.getValue()).build());
+            CategoryDto cryptocurrencyCategoryDto = categoryService.create(CategoryCreateRequest.builder().name("Cryptocurrency").transactionTypeValue(TransactionType.INCOME.getValue()).parentCategoryId(investmentCategoryDto.getId()).build());
+            create(PayeeCreateRequest.builder().name("Binance").categoryId(cryptocurrencyCategoryDto.getId()).build());
+            categoryService.create(CategoryCreateRequest.builder().name("Gold").transactionTypeValue(TransactionType.INCOME.getValue()).parentCategoryId(investmentCategoryDto.getId()).build());
+            CategoryDto stocksCategoryDto = categoryService.create(CategoryCreateRequest.builder().name("Stocks").transactionTypeValue(TransactionType.INCOME.getValue()).parentCategoryId(investmentCategoryDto.getId()).build());
+            create(PayeeCreateRequest.builder().name("Midas").categoryId(stocksCategoryDto.getId()).build());
+            categoryService.create(CategoryCreateRequest.builder().name("Others").transactionTypeValue(TransactionType.INCOME.getValue()).build());
+            categoryService.create(CategoryCreateRequest.builder().name("Pocket Money").transactionTypeValue(TransactionType.INCOME.getValue()).build());
+            categoryService.create(CategoryCreateRequest.builder().name("Salary").transactionTypeValue(TransactionType.INCOME.getValue()).build());
+            // Transfer
+            categoryService.create(CategoryCreateRequest.builder().name("Credit Card Debt").transactionTypeValue(TransactionType.TRANSFER.getValue()).build());
+            categoryService.create(CategoryCreateRequest.builder().name("Investment").transactionTypeValue(TransactionType.TRANSFER.getValue()).build());
+            WalletUserDto walletUserDto = userService.getCurrentLoggedInUserFull();
+            walletUserDto.setIsDefaultsCreated(Boolean.TRUE);
+            userService.updateUser(walletUserDto);
+        }
+    }
+
+    @Override
     public Page<PayeeResponse> search(PayeeSearchRequest request, Status status, Pageable pageable) {
         WalletUserBasicDto walletUserDto = userService.getCurrentLoggedInUser();
         request.setUserId(walletUserDto.getId());
@@ -80,21 +141,19 @@ public class PayeeServiceImpl implements PayeeService {
     @Override
     public PayeeDto update(PayeeUpdateRequest payeeUpdateRequest, Long id) throws MtgWalletGenericException {
         Payee payee = repository.findByIdAndStatus(id, Status.ACTIVE).orElseThrow(() -> new MtgWalletGenericException(GenericExceptionMessages.PAYEE_NOT_FOUND.getMessage()));
-        userService.validateUsernameIfItsTheCurrentUser(payee.getUser().getUsername());
+        userService.validateUserIdIfItsTheCurrentUser(payee.getUser().getId());
         List<PayeeDto> userPayees = findAllByCurrentUserByStatus(Status.ACTIVE);
         if (userPayees.stream().anyMatch(existingPayee -> !Objects.equals(existingPayee.getId(), id) && existingPayee.getName().equals(payeeUpdateRequest.getName()))) {
             throw new MtgWalletGenericException(GenericExceptionMessages.PAYEE_NAME_ALREADY_EXISTS.getMessage());
         }
         payee.setName(payeeUpdateRequest.getName());
-        Category category = categoryServiceMapper.toCategoryEntity(categoryService.getCategory(payeeUpdateRequest.getCategoryId()));
-        payee.setCategory(category);
         return mapper.toPayeeDto(repository.save(payee));
     }
 
     @Override
     public void delete(Long id) throws MtgWalletGenericException {
         Payee payee = repository.findById(id).orElseThrow(() -> new MtgWalletGenericException(GenericExceptionMessages.PAYEE_NOT_FOUND.getMessage()));
-        userService.validateUsernameIfItsTheCurrentUser(payee.getUser().getUsername());
+        userService.validateUserIdIfItsTheCurrentUser(payee.getUser().getId());
         payee.setName("Deleted Payee");
         payee.setStatus(Status.DELETED);
         repository.save(payee);
@@ -110,7 +169,7 @@ public class PayeeServiceImpl implements PayeeService {
     public PayeeDto getPayee(Long id) throws MtgWalletGenericException {
         Optional<Payee> payee = repository.findById(id);
         if (payee.isPresent()) {
-            userService.validateUsernameIfItsTheCurrentUser(payee.get().getUser().getUsername());
+            userService.validateUserIdIfItsTheCurrentUser(payee.get().getUser().getId());
         }
         return payee.map(mapper::toPayeeDto).orElse(null);
     }

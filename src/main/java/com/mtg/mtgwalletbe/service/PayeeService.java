@@ -16,6 +16,8 @@ import java.util.List;
 public interface PayeeService {
     PayeeDto create(PayeeCreateRequest payeeCreateRequest) throws MtgWalletGenericException;
 
+    void createDefaults() throws MtgWalletGenericException;
+
     Page<PayeeResponse> search(PayeeSearchRequest request, Status status, Pageable pageable);
 
     PayeeDto update(PayeeUpdateRequest payeeUpdateRequest, Long id) throws MtgWalletGenericException;

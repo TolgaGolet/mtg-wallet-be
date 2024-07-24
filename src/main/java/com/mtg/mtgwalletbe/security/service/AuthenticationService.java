@@ -55,6 +55,7 @@ public class AuthenticationService {
                 .name(request.getName())
                 .surname(request.getSurname())
                 .password(passwordEncoder.encode(request.getPassword()))
+                .isDefaultsCreated(Boolean.FALSE)
                 .build();
         var savedUser = walletUserRepository.save(user);
         var jwtToken = jwtService.generateToken(user);

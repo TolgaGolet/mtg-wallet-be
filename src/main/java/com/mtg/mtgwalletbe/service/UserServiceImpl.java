@@ -83,11 +83,11 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void validateUsernameIfItsTheCurrentUser(String username) throws MtgWalletGenericException {
-        if (username == null) {
-            throw new MtgWalletGenericException(GenericExceptionMessages.USERNAME_CANT_BE_NULL.getMessage());
+    public void validateUserIdIfItsTheCurrentUser(Long userId) throws MtgWalletGenericException {
+        if (userId == null) {
+            throw new MtgWalletGenericException(GenericExceptionMessages.USER_ID_CANT_BE_NULL.getMessage());
         }
-        if (!username.equals(getCurrentLoggedInUser().getUsername())) {
+        if (!userId.equals(getCurrentLoggedInUser().getId())) {
             throw new MtgWalletGenericException(GenericExceptionMessages.NOT_AUTHORIZED_TO_PERFORM.getMessage());
         }
     }
