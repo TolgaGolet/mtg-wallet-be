@@ -4,11 +4,13 @@ import com.mtg.mtgwalletbe.enums.TransactionType;
 import lombok.Builder;
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 @Data
 @Builder
-public class ValidateTransactionDto {
-    private PayeeDto payeeDto;
+public class RollbackAccountBalancesDto {
+    private TransactionType transactionType;
     private AccountDto sourceAccountDto;
     private AccountDto targetAccountDto;
-    private TransactionType transactionType;
+    private BigDecimal amount;
 }
