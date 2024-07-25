@@ -40,7 +40,8 @@ public enum GenericExceptionMessages {
     SOURCE_ACCOUNT_ID_CANT_BE_THE_SAME_AS_TARGET_ACCOUNT_ID("Source account id can't be the same as target account id"),
     TARGET_ACCOUNT_CURRENCY_SHOULD_BE_THE_SAME_AS_SOURCE_ACCOUNT_CURRENCY("Target account currency should be the same as source account currency"),
     PAYEE_CATEGORY_TRANSACTION_TYPE_NOT_VALID("Payee category transaction type not valid"),
-    NOT_AUTHORIZED_TO_PERFORM("User not authorized to perform this action");
+    NOT_AUTHORIZED_TO_PERFORM("User not authorized to perform this action"),
+    TRANSACTION_NOT_FOUND("Transaction not found");
 
     private final String message;
 

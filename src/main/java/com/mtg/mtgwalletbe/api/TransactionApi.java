@@ -2,8 +2,9 @@ package com.mtg.mtgwalletbe.api;
 
 import com.mtg.mtgwalletbe.api.request.TransactionCreateRequest;
 import com.mtg.mtgwalletbe.api.request.TransactionSearchRequest;
-import com.mtg.mtgwalletbe.api.response.TransactionCreateResponse;
+import com.mtg.mtgwalletbe.api.request.TransactionUpdateRequest;
 import com.mtg.mtgwalletbe.api.response.TransactionCreateScreenEnumResponse;
+import com.mtg.mtgwalletbe.api.response.TransactionResponse;
 import com.mtg.mtgwalletbe.exception.MtgWalletGenericException;
 import com.mtg.mtgwalletbe.mapper.TransactionServiceMapper;
 import com.mtg.mtgwalletbe.service.TransactionService;
@@ -26,13 +27,24 @@ public class TransactionApi {
     private final TransactionServiceMapper transactionServiceMapper;
 
     @PostMapping("/create")
-    public ResponseEntity<TransactionCreateResponse> create(@RequestBody @Validated TransactionCreateRequest transactionCreateRequest) throws MtgWalletGenericException {
-        return ResponseEntity.ok(transactionServiceMapper.toTransactionCreateResponse(transactionService.create(transactionCreateRequest)));
+    public ResponseEntity<TransactionResponse> create(@RequestBody @Validated TransactionCreateRequest transactionCreateRequest) throws MtgWalletGenericException {
+        return ResponseEntity.ok(transactionServiceMapper.toTransactionResponse(transactionService.create(transactionCreateRequest)));
     }
 
     @PostMapping("/search")
     public ResponseEntity<Page<TransactionDto>> search(@RequestBody @Validated TransactionSearchRequest request, @RequestParam(name = "pageNo", defaultValue = "0") int pageNo) {
         return ResponseEntity.ok(transactionService.search(request, PageRequest.of(pageNo, DEFAULT_PAGE_SIZE, Sort.by("dateTime").descending())));
+    }
+
+    @PutMapping("/update/{id}")
+    public ResponseEntity<TransactionResponse> update(@RequestBody @Validated TransactionUpdateRequest transactionUpdateRequest, @PathVariable Long id) throws MtgWalletGenericException {
+        return ResponseEntity.ok(transactionServiceMapper.toTransactionResponse(transactionService.update(transactionUpdateRequest, id)));
+    }
+
+    @DeleteMapping("delete/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) throws MtgWalletGenericException {
+        transactionService.delete(id);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/create/enums")
