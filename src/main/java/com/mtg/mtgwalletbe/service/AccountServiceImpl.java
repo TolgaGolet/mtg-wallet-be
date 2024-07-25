@@ -94,7 +94,7 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public AccountDto update(AccountDto accountDto) throws MtgWalletGenericException {
-        Account account = repository.findByIdAndStatus(accountDto.getId(), Status.ACTIVE).orElseThrow(() -> new MtgWalletGenericException(GenericExceptionMessages.ACCOUNT_NOT_FOUND.getMessage()));
+        Account account = repository.findById(accountDto.getId()).orElseThrow(() -> new MtgWalletGenericException(GenericExceptionMessages.ACCOUNT_NOT_FOUND.getMessage()));
         userService.validateUserIdIfItsTheCurrentUser(account.getUser().getId());
         mapper.updateAccountFromDto(accountDto, account);
         return mapper.toAccountDto(repository.save(account));
