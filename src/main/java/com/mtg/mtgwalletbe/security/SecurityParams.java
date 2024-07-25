@@ -12,10 +12,12 @@ public class SecurityParams {
     public static final String LOGIN_PATH = "/auth/authenticate";
     public static final String REFRESH_TOKEN_PATH = "/auth/refresh-token";
     public static final String LOGOUT_PATH = "/auth/logout";
+    public static final String HEALTH_CHECK_PATH = "/auth/health-check";
     public static final String[] AUTH_WHITELIST = {
             LOGIN_PATH,
             REFRESH_TOKEN_PATH,
-            REGISTER_PATH
+            REGISTER_PATH,
+            HEALTH_CHECK_PATH
     };
     public static final List<String> CORS_ALLOWED_ORIGINS = new ArrayList<>(Arrays.asList(
             "http://localhost:3000",
