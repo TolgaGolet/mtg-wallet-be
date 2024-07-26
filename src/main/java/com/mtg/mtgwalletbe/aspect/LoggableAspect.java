@@ -38,7 +38,7 @@ public class LoggableAspect {
             result = joinPoint.proceed();
         } catch (Throwable ex) {
             status = "E";
-            result = ex.getMessage() + Arrays.toString(ex.getStackTrace());
+            result = ex.getMessage() + " " + ex.getCause() + " " + Arrays.toString(ex.getStackTrace());
             throw ex;
         } finally {
             long endTime = System.currentTimeMillis();
