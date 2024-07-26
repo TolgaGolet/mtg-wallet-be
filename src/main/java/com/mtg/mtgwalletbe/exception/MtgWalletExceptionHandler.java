@@ -26,7 +26,7 @@ public class MtgWalletExceptionHandler {
      */
     @ExceptionHandler(MtgWalletGenericException.class)
     public ResponseEntity<String> handleException(MtgWalletGenericException ex) {
-        log.error("An error occurred: " + ex.getMessage() + Arrays.toString(ex.getStackTrace()));
+        log.error("An error occurred: {} {} {}", ex.getMessage(), ex.getCause(), Arrays.toString(ex.getStackTrace()));
         ServiceLog loggedError = logError(ex);
         String errorMessage = "An error occurred: " + ex.getMessage() + ". Tracking ID: " + loggedError.getId();
         // Returned HTTP status codes for exceptions are managed from here
@@ -43,7 +43,7 @@ public class MtgWalletExceptionHandler {
      */
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<String> handleException(AccessDeniedException ex) {
-        log.error("An error occurred: " + ex.getMessage() + Arrays.toString(ex.getStackTrace()));
+        log.error("An error occurred: {} {} {}", ex.getMessage(), ex.getCause(), Arrays.toString(ex.getStackTrace()));
         ServiceLog loggedError = logError(ex);
         return new ResponseEntity<>("Access denied. Tracking ID: " + loggedError.getId(), HttpStatus.FORBIDDEN);
     }
@@ -53,14 +53,14 @@ public class MtgWalletExceptionHandler {
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<String> handleException(Exception ex) {
-        log.error("An unexpected error occurred: " + ex.getMessage() + Arrays.toString(ex.getStackTrace()));
+        log.error("An unexpected error occurred: {} {} {}", ex.getMessage(), ex.getCause(), Arrays.toString(ex.getStackTrace()));
         ServiceLog loggedError = logError(ex);
         // ex.getMessage() for unexpected exceptions is not exposed on purpose
         return new ResponseEntity<>("An unexpected error occurred! Tracking ID: " + loggedError.getId(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     private ServiceLog logError(Exception ex) {
-        String response = ex.getMessage() + Arrays.toString(ex.getStackTrace());
+        String response = ex.getMessage() + " " + ex.getCause() + " " + Arrays.toString(ex.getStackTrace());
         ServiceLog serviceLog = ServiceLog.builder()
                 .serviceName(this.getClass().getName())
                 .status("E")
