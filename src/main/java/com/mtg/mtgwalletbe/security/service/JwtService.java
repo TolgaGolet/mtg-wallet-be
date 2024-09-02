@@ -59,6 +59,9 @@ public class JwtService {
     }
 
     private String buildToken(Map<String, Object> extraClaims, UserDetails userDetails, int expirationDuration) {
+        // Add the current time in nanoseconds and the current thread ID to the claims in order to make token unique
+        extraClaims.put("jti", System.nanoTime() + "-" + Thread.currentThread().threadId());
+
         return Jwts
                 .builder()
                 .setClaims(extraClaims)
