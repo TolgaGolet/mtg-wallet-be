@@ -9,7 +9,7 @@ import static com.mtg.mtgwalletbe.entity.Payee.PAYEE_NAME_REGULAR_EXPRESSION;
 @Data
 public class PayeeSearchRequest {
     private Long id;
-    @Size(min = 3, max = 50)
+    @Size(max = 50)
     @Pattern(regexp = PAYEE_NAME_REGULAR_EXPRESSION)
     private String name;
     private Long categoryId;
