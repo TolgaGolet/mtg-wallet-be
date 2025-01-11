@@ -20,7 +20,7 @@ public class AuditAwareImpl implements AuditorAware<String> {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
             log.warn("Authentication is null or not authenticated");
-            return Optional.empty();
+            return Optional.of(SYSTEM_USER);
         }
         return !Objects.equals(authentication.getName(), ANONYMOUS_USER) ? Optional.ofNullable(authentication.getName()) : Optional.of(SYSTEM_USER);
     }
