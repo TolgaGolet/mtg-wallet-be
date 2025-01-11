@@ -6,6 +6,7 @@ import com.mtg.mtgwalletbe.enums.TransactionType;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,23 +25,26 @@ public class TransactionSpecification {
             if (request.getPayeeId() != null) {
                 predicates.add(criteriaBuilder.equal(root.get("payee").get("id"), request.getPayeeId()));
             }
+            if (request.getPayeeName() != null) {
+                predicates.add(criteriaBuilder.like(
+                        criteriaBuilder.lower(root.get("payee").get("name")),
+                        "%" + request.getPayeeName().trim().toLowerCase() + "%"
+                ));
+            }
             if (request.getAmount() != null) {
                 predicates.add(criteriaBuilder.equal(root.get("amount"), request.getAmount()));
             }
             if (request.getDateTime() != null) {
-                predicates.add(criteriaBuilder.equal(root.get("dateTime"), request.getDateTime()));
+                predicates.add(criteriaBuilder.equal(
+                        criteriaBuilder.function("DATE", LocalDateTime.class, root.get("dateTime")),
+                        criteriaBuilder.function("DATE", LocalDateTime.class, criteriaBuilder.literal(request.getDateTime()))
+                ));
             }
             if (request.getSourceAccountId() != null) {
-                predicates.add(criteriaBuilder.or(
-                        criteriaBuilder.equal(root.get("sourceAccount").get("id"), request.getSourceAccountId()),
-                        criteriaBuilder.equal(root.get("targetAccount").get("id"), request.getSourceAccountId())
-                ));
+                predicates.add(criteriaBuilder.equal(root.get("sourceAccount").get("id"), request.getSourceAccountId()));
             }
             if (request.getTargetAccountId() != null) {
-                predicates.add(criteriaBuilder.or(
-                        criteriaBuilder.equal(root.get("targetAccount").get("id"), request.getTargetAccountId()),
-                        criteriaBuilder.equal(root.get("sourceAccount").get("id"), request.getTargetAccountId())
-                ));
+                predicates.add(criteriaBuilder.equal(root.get("targetAccount").get("id"), request.getTargetAccountId()));
             }
             if (request.getNotes() != null) {
                 predicates.add(criteriaBuilder.like(

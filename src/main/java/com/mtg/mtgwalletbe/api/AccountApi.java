@@ -12,6 +12,7 @@ import com.mtg.mtgwalletbe.service.AccountService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -32,7 +33,7 @@ public class AccountApi {
 
     @PostMapping("/search")
     public ResponseEntity<Page<AccountResponse>> search(@RequestBody @Validated AccountSearchRequest request, @RequestParam(name = "pageNo", defaultValue = "0") int pageNo) {
-        return ResponseEntity.ok(accountService.search(request, Status.ACTIVE, PageRequest.of(pageNo, MAX_ALLOWED_ACCOUNT_COUNT)));
+        return ResponseEntity.ok(accountService.search(request, Status.ACTIVE, PageRequest.of(pageNo, MAX_ALLOWED_ACCOUNT_COUNT, Sort.by("name").ascending())));
     }
 
     @PutMapping("/update/{id}")
