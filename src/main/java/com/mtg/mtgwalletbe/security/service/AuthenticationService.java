@@ -11,6 +11,7 @@ import com.mtg.mtgwalletbe.security.api.request.AuthenticationRequest;
 import com.mtg.mtgwalletbe.security.api.request.RegisterRequest;
 import com.mtg.mtgwalletbe.security.api.response.AuthenticationResponse;
 import io.jsonwebtoken.ExpiredJwtException;
+import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -37,9 +38,10 @@ public class AuthenticationService {
     private final UserTokenRepository userTokenRepository;
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
+    private final EmailVerificationService emailVerificationService;
     private static final Integer MAX_USER_TOKEN_COUNT = 5;
 
-    public AuthenticationResponse register(RegisterRequest request) throws MtgWalletGenericException {
+    public AuthenticationResponse register(RegisterRequest request) throws MtgWalletGenericException, MessagingException {
         if (walletUserRepository.findByUsername(request.getUsername()).isPresent()) {
             throw new MtgWalletGenericException(GenericExceptionMessages.USERNAME_ALREADY_EXISTS.getMessage());
         }
@@ -56,14 +58,15 @@ public class AuthenticationService {
                 .surname(request.getSurname())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .isDefaultsCreated(Boolean.FALSE)
+                .isEmailVerified(Boolean.FALSE)
                 .build();
         var savedUser = walletUserRepository.save(user);
         var jwtToken = jwtService.generateToken(user);
-        var refreshToken = jwtService.generateRefreshToken(user);
         saveUserToken(savedUser, jwtToken);
+        emailVerificationService.createVerificationToken(savedUser);
         return AuthenticationResponse.builder()
                 .accessToken(jwtToken)
-                .refreshToken(refreshToken)
+                .emailVerificationRequired(true)
                 .build();
     }
 
@@ -82,6 +85,9 @@ public class AuthenticationService {
         var user = walletUserRepository
                 .findByUsername(request.getUsername())
                 .orElseThrow(() -> new UsernameNotFoundException(GenericExceptionMessages.USER_NOT_FOUND.getMessage()));
+        if (Boolean.FALSE.equals(user.getIsEmailVerified())) {
+            throw new MtgWalletGenericException(GenericExceptionMessages.NOT_VERIFIED_EMAIL.getMessage());
+        }
         var jwtToken = jwtService.generateToken(user);
         var refreshToken = jwtService.generateRefreshToken(user);
         revokeAllUserTokens(user);
