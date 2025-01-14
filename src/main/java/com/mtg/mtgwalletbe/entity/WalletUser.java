@@ -88,6 +88,8 @@ public class WalletUser extends Auditable implements UserDetails {
     private Payee defaultPayeeForIncome;
     @NotNull
     private Boolean isDefaultsCreated;
+    @NotNull
+    private Boolean isEmailVerified;
 
     // TODO add columns and functionalities for isCredentialsNonExpired, isEnabled etc.
 

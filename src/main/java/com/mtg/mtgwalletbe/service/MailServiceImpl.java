@@ -4,6 +4,7 @@ import com.mtg.mtgwalletbe.annotation.Loggable;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -14,6 +15,8 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class MailServiceImpl implements MailService {
     private final JavaMailSender emailSender;
+    @Value("${mtgWallet.frontend.url}")
+    private String frontendUrl;
 
     @Override
     @Loggable
@@ -45,6 +48,13 @@ public class MailServiceImpl implements MailService {
                                 text-align: center;
                                 border-radius: 5px 5px 0 0;
                             }
+                            .header a {
+                                color: white;
+                                text-decoration: none;
+                            }
+                            .header a:hover {
+                                text-decoration: underline;
+                            }
                             .content {
                                 padding: 20px;
                                 background-color: #ffffff;
@@ -61,7 +71,7 @@ public class MailServiceImpl implements MailService {
                     <body>
                         <div class="email-container">
                             <div class="header">
-                                <h1>MTG Wallet</h1>
+                                <h1><a href="%s">MTG Wallet</a></h1>
                             </div>
                             <div class="content">
                                 <h2>
@@ -75,7 +85,7 @@ public class MailServiceImpl implements MailService {
                         </div>
                     </body>
                 </html>
-                """.formatted(subject, text);
+                """.formatted(frontendUrl, subject, text);
 
         helper.setText(htmlContent, true);
         emailSender.send(message);

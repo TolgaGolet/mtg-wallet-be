@@ -33,6 +33,7 @@ public class MtgWalletExceptionHandler {
         HttpStatus httpStatus = switch (GenericExceptionMessages.fromMessage(ex.getMessage())) {
             case USERNAME_ALREADY_EXISTS, EMAIL_ALREADY_EXISTS -> HttpStatus.CONFLICT;
             case BAD_USERNAME_OR_PASSWORD, JWT_EXPIRED -> HttpStatus.UNAUTHORIZED;
+            case NOT_VERIFIED_EMAIL -> HttpStatus.FORBIDDEN;
             case null, default -> HttpStatus.INTERNAL_SERVER_ERROR;
         };
         return new ResponseEntity<>(errorMessage, httpStatus);

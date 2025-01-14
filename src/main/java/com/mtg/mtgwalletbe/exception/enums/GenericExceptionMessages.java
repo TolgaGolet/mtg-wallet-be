@@ -42,7 +42,11 @@ public enum GenericExceptionMessages {
     PAYEE_CATEGORY_TRANSACTION_TYPE_NOT_VALID("Payee category transaction type not valid"),
     NOT_AUTHORIZED_TO_PERFORM("User not authorized to perform this action"),
     TRANSACTION_NOT_FOUND("Transaction not found"),
-    DATABASE_DOWN("Database is down");
+    DATABASE_DOWN("Database is down"),
+    INVALID_EMAIL_VERIFICATION_TOKEN("Invalid email verification token"),
+    EXPIRED_EMAIL_VERIFICATION_TOKEN("Email verification token expired"),
+    NOT_VERIFIED_EMAIL("Email is not verified"),
+    ALREADY_VERIFIED_EMAIL("Email is already verified");
 
     private final String message;
 
