@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-public class EmailVerificationToken extends Auditable {
+public class PasswordResetToken extends Auditable {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(unique = true, updatable = false)
@@ -23,7 +23,7 @@ public class EmailVerificationToken extends Auditable {
     @NotNull
     @Column(nullable = false, unique = true)
     private String token;
-    @OneToOne(fetch = FetchType.EAGER, optional = false)
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private WalletUser user;
     @NotNull

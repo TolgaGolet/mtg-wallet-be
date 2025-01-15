@@ -46,7 +46,9 @@ public enum GenericExceptionMessages {
     INVALID_EMAIL_VERIFICATION_TOKEN("Invalid email verification token"),
     EXPIRED_EMAIL_VERIFICATION_TOKEN("Email verification token expired"),
     NOT_VERIFIED_EMAIL("Email is not verified"),
-    ALREADY_VERIFIED_EMAIL("Email is already verified");
+    ALREADY_VERIFIED_EMAIL("Email is already verified"),
+    INVALID_PASSWORD_RESET_TOKEN("Invalid password reset token"),
+    EXPIRED_PASSWORD_RESET_TOKEN("Password reset token expired");
 
     private final String message;
 
