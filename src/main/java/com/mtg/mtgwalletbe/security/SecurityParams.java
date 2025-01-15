@@ -14,6 +14,8 @@ public class SecurityParams {
     public static final String RESEND_VERIFY_EMAIL_PATH = "/email-verification/resend/*";
     public static final String REFRESH_TOKEN_PATH = "/auth/refresh-token";
     public static final String LOGOUT_PATH = "/auth/logout";
+    public static final String PASSWORD_RESET_REQUEST_PATH = "/auth/password-reset/request";
+    public static final String PASSWORD_RESET_PATH = "/auth/password-reset/reset/*";
     public static final String HEALTH_ACTUATOR_PATH = "/actuator/health";
     public static final String DATABASE_HEALTH_ACTUATOR_PATH = "/actuator/database-health";
     public static final String[] AUTH_WHITELIST = {
@@ -23,7 +25,9 @@ public class SecurityParams {
             HEALTH_ACTUATOR_PATH,
             DATABASE_HEALTH_ACTUATOR_PATH,
             VERIFY_EMAIL_PATH,
-            RESEND_VERIFY_EMAIL_PATH
+            RESEND_VERIFY_EMAIL_PATH,
+            PASSWORD_RESET_REQUEST_PATH,
+            PASSWORD_RESET_PATH
     };
     public static final List<String> CORS_ALLOWED_ORIGINS = new ArrayList<>(Arrays.asList(
             "http://localhost:3000",
