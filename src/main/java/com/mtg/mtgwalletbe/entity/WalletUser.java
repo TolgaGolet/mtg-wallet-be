@@ -33,6 +33,7 @@ public class WalletUser extends Auditable implements UserDetails {
     public static final int NAME_MIN_LENGTH = 3;
     public static final int NAME_MAX_LENGTH = 15;
     public static final int SURNAME_MAX_LENGTH = 15;
+    public static final String PASSWORD_REGULAR_EXPRESSION = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*(),.?\":{}|<>])[A-Za-z\\d!@#$%^&*(),.?\":{}|<>]{8,64}$";
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)

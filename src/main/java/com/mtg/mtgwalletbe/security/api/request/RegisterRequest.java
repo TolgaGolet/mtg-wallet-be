@@ -15,9 +15,6 @@ import static com.mtg.mtgwalletbe.entity.WalletUser.*;
 @AllArgsConstructor
 @NoArgsConstructor
 public class RegisterRequest {
-    public static final int PASSWORD_DECODED_MIN_LENGTH = 3;
-    public static final int PASSWORD_DECODED_MAX_LENGTH = 30;
-
     @NotNull
     @Size(min = USERNAME_MIN_LENGTH, max = USERNAME_MAX_LENGTH)
     @Pattern(regexp = USERNAME_REGULAR_EXPRESSION)
@@ -32,6 +29,6 @@ public class RegisterRequest {
     @Size(max = SURNAME_MAX_LENGTH)
     private String surname;
     @NotNull
-    @Size(min = PASSWORD_DECODED_MIN_LENGTH, max = PASSWORD_DECODED_MAX_LENGTH)
+    @Pattern(regexp = PASSWORD_REGULAR_EXPRESSION)
     private String password;
 }

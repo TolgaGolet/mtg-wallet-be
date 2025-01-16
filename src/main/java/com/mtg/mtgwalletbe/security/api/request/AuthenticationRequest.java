@@ -9,8 +9,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import static com.mtg.mtgwalletbe.entity.WalletUser.*;
-import static com.mtg.mtgwalletbe.security.api.request.RegisterRequest.PASSWORD_DECODED_MAX_LENGTH;
-import static com.mtg.mtgwalletbe.security.api.request.RegisterRequest.PASSWORD_DECODED_MIN_LENGTH;
 
 @Data
 @Builder
@@ -22,6 +20,6 @@ public class AuthenticationRequest {
     @Pattern(regexp = USERNAME_REGULAR_EXPRESSION)
     private String username;
     @NotNull
-    @Size(min = PASSWORD_DECODED_MIN_LENGTH, max = PASSWORD_DECODED_MAX_LENGTH)
+    @Pattern(regexp = PASSWORD_REGULAR_EXPRESSION)
     private String password;
 }
