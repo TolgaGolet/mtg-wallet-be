@@ -40,11 +40,15 @@ public class TransactionSpecification {
                         criteriaBuilder.function("DATE", LocalDateTime.class, criteriaBuilder.literal(request.getDateTime()))
                 ));
             }
-            if (request.getSourceAccountId() != null) {
-                predicates.add(criteriaBuilder.equal(root.get("sourceAccount").get("id"), request.getSourceAccountId()));
-            }
-            if (request.getTargetAccountId() != null) {
-                predicates.add(criteriaBuilder.equal(root.get("targetAccount").get("id"), request.getTargetAccountId()));
+            if (request.getSourceAccountId() != null || request.getTargetAccountId() != null) {
+                List<Predicate> sourceOrTargetAccountPredicates = new ArrayList<>();
+                if (request.getSourceAccountId() != null) {
+                    sourceOrTargetAccountPredicates.add(criteriaBuilder.equal(root.get("sourceAccount").get("id"), request.getSourceAccountId()));
+                }
+                if (request.getTargetAccountId() != null) {
+                    sourceOrTargetAccountPredicates.add(criteriaBuilder.equal(root.get("targetAccount").get("id"), request.getTargetAccountId()));
+                }
+                predicates.add(criteriaBuilder.or(sourceOrTargetAccountPredicates.toArray(new Predicate[0])));
             }
             if (request.getNotes() != null) {
                 predicates.add(criteriaBuilder.like(
