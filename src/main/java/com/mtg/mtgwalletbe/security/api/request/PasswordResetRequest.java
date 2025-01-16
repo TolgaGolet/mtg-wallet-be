@@ -1,21 +1,20 @@
 package com.mtg.mtgwalletbe.security.api.request;
 
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import static com.mtg.mtgwalletbe.entity.WalletUser.PASSWORD_REGULAR_EXPRESSION;
 
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class PasswordResetRequest {
-    public static final int PASSWORD_DECODED_MIN_LENGTH = 3;
-    public static final int PASSWORD_DECODED_MAX_LENGTH = 30;
-
     @NotNull
-    @Size(min = PASSWORD_DECODED_MIN_LENGTH, max = PASSWORD_DECODED_MAX_LENGTH)
+    @Pattern(regexp = PASSWORD_REGULAR_EXPRESSION)
     private String password;
 }
