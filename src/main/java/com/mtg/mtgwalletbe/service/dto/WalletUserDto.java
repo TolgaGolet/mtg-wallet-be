@@ -4,6 +4,7 @@ import com.mtg.mtgwalletbe.entity.Account;
 import com.mtg.mtgwalletbe.entity.Category;
 import com.mtg.mtgwalletbe.entity.Payee;
 import com.mtg.mtgwalletbe.entity.Role;
+import lombok.Builder;
 import lombok.Data;
 
 import java.util.ArrayList;
@@ -12,6 +13,7 @@ import java.util.List;
 import java.util.Set;
 
 @Data
+@Builder
 public class WalletUserDto {
     private Long id;
     private String username;
