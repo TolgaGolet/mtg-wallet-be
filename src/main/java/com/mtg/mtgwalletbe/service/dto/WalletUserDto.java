@@ -26,4 +26,7 @@ public class WalletUserDto {
     private Payee defaultPayeeForExpense;
     private Payee defaultPayeeForIncome;
     private Boolean isDefaultsCreated;
+    private Boolean totpEnabled;
+    private Boolean isEmailVerified;
+    private String totpSecret;
 }

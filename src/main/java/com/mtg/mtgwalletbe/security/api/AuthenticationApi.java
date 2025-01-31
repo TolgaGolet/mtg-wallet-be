@@ -1,10 +1,11 @@
 package com.mtg.mtgwalletbe.security.api;
 
 import com.mtg.mtgwalletbe.exception.MtgWalletGenericException;
-import com.mtg.mtgwalletbe.security.api.request.AuthenticationRequest;
-import com.mtg.mtgwalletbe.security.api.request.RegisterRequest;
+import com.mtg.mtgwalletbe.security.api.request.*;
 import com.mtg.mtgwalletbe.security.api.response.AuthenticationResponse;
+import com.mtg.mtgwalletbe.security.api.response.TotpSetupResponse;
 import com.mtg.mtgwalletbe.security.service.AuthenticationService;
+import dev.samstevens.totp.exceptions.QrGenerationException;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -37,5 +38,31 @@ public class AuthenticationApi {
     @PostMapping("/refresh-token")
     public ResponseEntity<AuthenticationResponse> refreshToken(HttpServletRequest request, HttpServletResponse response) throws MtgWalletGenericException {
         return ResponseEntity.ok(authenticationService.refreshToken(request, response));
+    }
+
+    @PostMapping("/totp/setup")
+    public ResponseEntity<TotpSetupResponse> setupTotp(HttpServletRequest request)
+            throws QrGenerationException, MtgWalletGenericException {
+        return ResponseEntity.ok(authenticationService.setupTotp(request));
+    }
+
+    @PostMapping("/totp/verify-setup")
+    public ResponseEntity<AuthenticationResponse> verifyAndEnableTotp(
+            HttpServletRequest request,
+            @RequestBody @Validated TotpSetupRequest totpRequest) throws MtgWalletGenericException {
+        return ResponseEntity.ok(authenticationService.verifyAndEnableTotp(request, totpRequest.getCode()));
+    }
+
+    @PostMapping("/totp/verify")
+    public ResponseEntity<AuthenticationResponse> verifyTotp(
+            @RequestBody @Validated TotpVerificationRequest request) throws MtgWalletGenericException {
+        return ResponseEntity.ok(authenticationService.verifyTotp(request));
+    }
+
+    @PostMapping("/totp/disable")
+    public ResponseEntity<Void> disableTotp(HttpServletRequest request,
+                                            @RequestBody @Validated TotpDisableRequest totpDisableRequest) throws MtgWalletGenericException {
+        authenticationService.disableTotp(request, totpDisableRequest);
+        return ResponseEntity.ok().build();
     }
 }

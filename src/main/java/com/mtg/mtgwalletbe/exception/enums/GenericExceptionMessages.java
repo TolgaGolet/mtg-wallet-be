@@ -15,6 +15,8 @@ public enum GenericExceptionMessages {
     JWT_NOT_VALID("Token is not valid"),
     JWT_EXPIRED("Token is expired"),
     BAD_USERNAME_OR_PASSWORD("Username or password is wrong"),
+    WRONG_PASSWORD("Wrong password"),
+    PASSWORDS_MISMATCH("Passwords mismatch"),
     USER_NOT_FOUND("User not found"),
     ROLE_NOT_FOUND("Role not found"),
     USERNAME_ALREADY_EXISTS("Username is already taken. Please choose another username"),
@@ -48,7 +50,10 @@ public enum GenericExceptionMessages {
     NOT_VERIFIED_EMAIL("Email is not verified"),
     ALREADY_VERIFIED_EMAIL("Email is already verified"),
     INVALID_PASSWORD_RESET_TOKEN("Invalid password reset token"),
-    EXPIRED_PASSWORD_RESET_TOKEN("Password reset token expired");
+    EXPIRED_PASSWORD_RESET_TOKEN("Password reset token expired"),
+    INVALID_ACCOUNT_RECOVERY_TOKEN("Invalid account recovery token"),
+    EXPIRED_ACCOUNT_RECOVERY_TOKEN("Account recovery token expired"),
+    INVALID_TOTP_CODE("Invalid TOTP code");
 
     private final String message;
 

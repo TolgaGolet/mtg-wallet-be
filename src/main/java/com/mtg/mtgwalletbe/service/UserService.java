@@ -6,7 +6,6 @@ import com.mtg.mtgwalletbe.service.dto.RoleDto;
 import com.mtg.mtgwalletbe.service.dto.WalletUserBasicDto;
 import com.mtg.mtgwalletbe.service.dto.WalletUserDto;
 
-import java.security.Principal;
 import java.util.Optional;
 
 public interface UserService {
@@ -28,5 +27,7 @@ public interface UserService {
 
     WalletUserDto updateUser(WalletUserDto walletUserDto) throws MtgWalletGenericException;
 
-    void changePassword(ChangePasswordRequest request, Principal connectedUser);
+    void changePassword(ChangePasswordRequest request) throws MtgWalletGenericException;
+
+    void deleteUser(WalletUserDto walletUser);
 }
