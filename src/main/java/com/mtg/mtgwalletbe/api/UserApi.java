@@ -11,12 +11,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.security.Principal;
 
 @RestController
 @RequiredArgsConstructor
@@ -37,9 +34,9 @@ public class UserApi {
         return ResponseEntity.ok().build();
     }
 
-    @PatchMapping
-    public ResponseEntity<Void> changePassword(@RequestBody @Validated ChangePasswordRequest request, Principal connectedUser) {
-        userService.changePassword(request, connectedUser);
+    @PostMapping("/user/change-password")
+    public ResponseEntity<Void> changePassword(@RequestBody @Validated ChangePasswordRequest request) throws MtgWalletGenericException {
+        userService.changePassword(request);
         return ResponseEntity.ok().build();
     }
 }

@@ -17,4 +17,6 @@ public class AuthenticationResponse {
     private String refreshToken;
     @JsonProperty("emailVerificationRequired")
     private boolean emailVerificationRequired;
+    @JsonProperty("totpRequired")
+    private boolean totpRequired;
 }

@@ -12,7 +12,6 @@ import com.mtg.mtgwalletbe.service.dto.RoleDto;
 import com.mtg.mtgwalletbe.service.dto.WalletUserBasicDto;
 import com.mtg.mtgwalletbe.service.dto.WalletUserDto;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -20,9 +19,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.security.Principal;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -100,19 +99,34 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void changePassword(ChangePasswordRequest request, Principal connectedUser) {
-        var user = (WalletUser) ((UsernamePasswordAuthenticationToken) connectedUser).getPrincipal();
+    public void changePassword(ChangePasswordRequest request) throws MtgWalletGenericException {
+        WalletUserDto walletUserDto = getCurrentLoggedInUserFull();
+
         // check if the current password is correct
-        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
-            throw new IllegalStateException("Wrong password");
+        if (!passwordEncoder.matches(request.getCurrentPassword(), walletUserDto.getPassword())) {
+            throw new IllegalStateException(GenericExceptionMessages.WRONG_PASSWORD.getMessage());
         }
         // check if the two new passwords are the same
-        if (!request.getNewPassword().equals(request.getConfirmationPassword())) {
-            throw new IllegalStateException("Password are not the same");
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new IllegalStateException(GenericExceptionMessages.PASSWORDS_MISMATCH.getMessage());
         }
         // update the password
-        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        walletUserDto.setPassword(passwordEncoder.encode(request.getNewPassword()));
         // save the new password
-        walletUserRepository.save(user);
+        updateUser(walletUserDto);
+    }
+
+    @Override
+    @Transactional
+    public void deleteUser(WalletUserDto walletUserDto) {
+        // TODO: check
+        String deletedUserString = ("DLT#" + UUID.randomUUID()).substring(0, 15);
+        WalletUser walletUser = walletUserRepository.findByUsername(walletUserDto.getUsername()).orElseThrow(() -> new UsernameNotFoundException(GenericExceptionMessages.USER_NOT_FOUND.getMessage()));
+        walletUserDto.setEmail(deletedUserString);
+        walletUserDto.setName(deletedUserString);
+        walletUserDto.setSurname(deletedUserString);
+        walletUserDto.setUsername(deletedUserString);
+        mapper.updateWalletUserFromDto(walletUserDto, walletUser);
+        mapper.toWalletUserDto(walletUserRepository.save(walletUser));
     }
 }

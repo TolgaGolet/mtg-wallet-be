@@ -91,6 +91,9 @@ public class WalletUser extends Auditable implements UserDetails {
     private Boolean isDefaultsCreated;
     @NotNull
     private Boolean isEmailVerified;
+    @NotNull
+    private Boolean totpEnabled = false;
+    private String totpSecret;
 
     // TODO add columns and functionalities for isCredentialsNonExpired, isEnabled etc.
 
