@@ -285,7 +285,7 @@ public class AuthenticationService {
         userTokenRepository.deleteOlderTokensOfUserByCount(user.getId(), MAX_USER_TOKEN_COUNT);
         return AuthenticationResponse.builder()
                 .accessToken(accessToken)
-                .refreshToken(refreshToken)
+                .refreshToken(jwtService.generateRefreshToken(user))
                 .build();
     }
 }
