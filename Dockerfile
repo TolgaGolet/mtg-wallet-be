@@ -1,4 +1,4 @@
-FROM openjdk:21-jdk-slim AS build
+FROM openjdk:21-slim AS build
 
 # Install Maven
 RUN apt-get update \
