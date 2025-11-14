@@ -1,4 +1,4 @@
-FROM openjdk:21-slim AS build
+FROM eclipse-temurin:21-jdk-jammy AS build
 
 # Install Maven
 RUN apt-get update \
