@@ -5,7 +5,6 @@ import com.mtg.mtgwalletbe.exception.MtgWalletGenericException;
 import com.mtg.mtgwalletbe.exception.enums.GenericExceptionMessages;
 import com.mtg.mtgwalletbe.repository.WalletUserRepository;
 import com.mtg.mtgwalletbe.security.service.EmailVerificationService;
-import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
@@ -30,8 +29,7 @@ public class EmailVerificationApi {
     }
 
     @PostMapping("/resend/{username}")
-    public ResponseEntity<Void> resendVerificationEmail(@PathVariable String username)
-            throws MessagingException {
+    public ResponseEntity<Void> resendVerificationEmail(@PathVariable String username) {
         WalletUser user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException(GenericExceptionMessages.USER_NOT_FOUND.getMessage()));
 

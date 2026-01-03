@@ -1,33 +1,46 @@
 package com.mtg.mtgwalletbe.service;
 
+import com.mailjet.client.ClientOptions;
+import com.mailjet.client.MailjetClient;
+import com.mailjet.client.MailjetRequest;
+import com.mailjet.client.MailjetResponse;
+import com.mailjet.client.resource.Emailv31;
 import com.mtg.mtgwalletbe.annotation.Loggable;
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
-import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 @Service
-@RequiredArgsConstructor
+@Slf4j
 public class MailServiceImpl implements MailService {
-    private final JavaMailSender emailSender;
-    @Value("${mtgWallet.frontend.url}")
-    private String frontendUrl;
+    private final MailjetClient mailjetClient;
+    private final String senderEmail;
+    private final String senderName;
+    private final String frontendUrl;
+
+    public MailServiceImpl(
+            @Value("${mtgWallet.mailjet.apiKey}") String apiKey,
+            @Value("${mtgWallet.mailjet.secretKey}") String secretKey,
+            @Value("${mtgWallet.mailjet.senderEmail}") String senderEmail,
+            @Value("${mtgWallet.mailjet.senderName}") String senderName,
+            @Value("${mtgWallet.frontend.url}") String frontendUrl) {
+        this.mailjetClient = new MailjetClient(
+                ClientOptions.builder()
+                        .apiKey(apiKey)
+                        .apiSecretKey(secretKey)
+                        .build());
+        this.senderEmail = senderEmail;
+        this.senderName = senderName;
+        this.frontendUrl = frontendUrl;
+    }
 
     @Override
     @Loggable
     @Async
-    public void send(String to, String subject, String text) throws MessagingException {
-        MimeMessage message = emailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
-        helper.setTo(to);
-        helper.setSubject(subject);
-
+    public void send(String to, String subject, String text) {
         String htmlContent = """
                 <!DOCTYPE html>
                 <html>
@@ -87,18 +100,47 @@ public class MailServiceImpl implements MailService {
                 </html>
                 """.formatted(frontendUrl, subject, text);
 
-        helper.setText(htmlContent, true);
-        emailSender.send(message);
+        sendEmail(to, subject, null, htmlContent);
     }
 
     @Override
     @Loggable
     @Async
     public void sendSimple(String to, String subject, String text) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(to);
-        message.setSubject(subject);
-        message.setText(text);
-        emailSender.send(message);
+        sendEmail(to, subject, text, null);
+    }
+
+    private void sendEmail(String to, String subject, String textContent, String htmlContent) {
+        try {
+            JSONObject message = new JSONObject()
+                    .put(Emailv31.Message.FROM, new JSONObject()
+                            .put("Email", senderEmail)
+                            .put("Name", senderName))
+                    .put(Emailv31.Message.TO, new JSONArray()
+                            .put(new JSONObject()
+                                    .put("Email", to)))
+                    .put(Emailv31.Message.SUBJECT, subject);
+
+            if (textContent != null) {
+                message.put(Emailv31.Message.TEXTPART, textContent);
+            }
+            if (htmlContent != null) {
+                message.put(Emailv31.Message.HTMLPART, htmlContent);
+            }
+
+            MailjetRequest request = new MailjetRequest(Emailv31.resource)
+                    .property(Emailv31.MESSAGES, new JSONArray().put(message));
+
+            MailjetResponse response = mailjetClient.post(request);
+
+            if (response.getStatus() != 200) {
+                log.error("Failed to send email to {}. Status: {}, Data: {}",
+                        to, response.getStatus(), response.getData());
+            } else {
+                log.info("Email sent successfully to {}", to);
+            }
+        } catch (Exception e) {
+            log.error("Error sending email to {}: {}", to, e.getMessage(), e);
+        }
     }
 }

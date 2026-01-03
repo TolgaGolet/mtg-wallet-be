@@ -7,7 +7,6 @@ import com.mtg.mtgwalletbe.exception.enums.GenericExceptionMessages;
 import com.mtg.mtgwalletbe.repository.EmailVerificationTokenRepository;
 import com.mtg.mtgwalletbe.repository.WalletUserRepository;
 import com.mtg.mtgwalletbe.service.MailService;
-import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -29,7 +28,7 @@ public class EmailVerificationService {
     @Value("${mtgWallet.frontend.url}")
     private String frontendUrl;
 
-    public void createVerificationToken(WalletUser user) throws MessagingException {
+    public void createVerificationToken(WalletUser user) {
         // Delete any existing tokens
         List<EmailVerificationToken> existingTokens = emailVerificationTokenRepository.findAllByUser(user);
         if (!existingTokens.isEmpty()) {
@@ -48,7 +47,7 @@ public class EmailVerificationService {
         sendVerificationEmail(user.getEmail(), token);
     }
 
-    private void sendVerificationEmail(String email, String token) throws MessagingException {
+    private void sendVerificationEmail(String email, String token) {
         String verificationUrl = frontendUrl + "/verify-email/" + token;
         String emailContent = String.format("""
                 <p>Please click the link below to verify your email address:</p>

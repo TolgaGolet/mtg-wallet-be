@@ -8,7 +8,6 @@ import com.mtg.mtgwalletbe.repository.AccountRecoveryTokenRepository;
 import com.mtg.mtgwalletbe.repository.WalletUserRepository;
 import com.mtg.mtgwalletbe.security.api.request.AccountRecoveryInitRequest;
 import com.mtg.mtgwalletbe.service.MailService;
-import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -31,7 +30,7 @@ public class AccountRecoveryService {
     private static final int TOKEN_EXPIRATION_MINUTES = 10;
 
     @Transactional
-    public void initiateAccountRecovery(AccountRecoveryInitRequest request) throws MessagingException, MtgWalletGenericException {
+    public void initiateAccountRecovery(AccountRecoveryInitRequest request) throws MtgWalletGenericException {
         WalletUser user = authenticationService.authenticateUser(request.getUsername(), request.getPassword());
         accountRecoveryTokenRepository.findByUser(user).ifPresent(accountRecoveryTokenRepository::delete);
         accountRecoveryTokenRepository.flush();
@@ -46,7 +45,7 @@ public class AccountRecoveryService {
         sendAccountRecoveryEmail(user.getEmail(), token);
     }
 
-    private void sendAccountRecoveryEmail(String email, String token) throws MessagingException {
+    private void sendAccountRecoveryEmail(String email, String token) {
         String recoveryUrl = frontendUrl + "/recover-account/" + token;
         String emailContent = String.format("""
                 <p>You have requested to recover your account. <b>This action will disable your two factor authentication.</b> You should enable this feature once you login for your security.</p>

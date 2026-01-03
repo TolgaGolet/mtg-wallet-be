@@ -5,7 +5,6 @@ import com.mtg.mtgwalletbe.api.request.UpdateSettingsRequest;
 import com.mtg.mtgwalletbe.exception.MtgWalletGenericException;
 import com.mtg.mtgwalletbe.service.SettingsService;
 import com.mtg.mtgwalletbe.service.dto.SettingsDto;
-import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -24,7 +23,7 @@ public class SettingsApi {
 
     @PostMapping("/update")
     public ResponseEntity<SettingsDto> updateSettings(@RequestBody @Validated UpdateSettingsRequest request)
-            throws MtgWalletGenericException, MessagingException {
+            throws MtgWalletGenericException {
         return ResponseEntity.ok(settingsService.updateSettings(request));
     }
 
