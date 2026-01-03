@@ -7,7 +7,6 @@ import com.mtg.mtgwalletbe.exception.enums.GenericExceptionMessages;
 import com.mtg.mtgwalletbe.repository.PasswordResetTokenRepository;
 import com.mtg.mtgwalletbe.repository.WalletUserRepository;
 import com.mtg.mtgwalletbe.service.MailService;
-import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -32,7 +31,7 @@ public class PasswordResetService {
     private static final int TOKEN_EXPIRATION_MINUTES = 15;
 
     @Transactional
-    public void initiatePasswordReset(String email) throws MessagingException {
+    public void initiatePasswordReset(String email) {
         Optional<WalletUser> user = userRepository.findByEmail(email);
         if (user.isPresent()) {
             passwordResetTokenRepository.findByUser(user.get()).ifPresent(passwordResetTokenRepository::delete);
@@ -49,7 +48,7 @@ public class PasswordResetService {
         }
     }
 
-    private void sendPasswordResetEmail(String email, String token) throws MessagingException {
+    private void sendPasswordResetEmail(String email, String token) {
         String resetUrl = frontendUrl + "/reset-password/" + token;
         String emailContent = String.format("""
                 <p>You have requested to reset your password. Please click the link below to proceed:</p>

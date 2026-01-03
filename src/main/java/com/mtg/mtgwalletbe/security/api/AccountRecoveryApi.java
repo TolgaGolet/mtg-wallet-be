@@ -3,7 +3,6 @@ package com.mtg.mtgwalletbe.security.api;
 import com.mtg.mtgwalletbe.exception.MtgWalletGenericException;
 import com.mtg.mtgwalletbe.security.api.request.AccountRecoveryInitRequest;
 import com.mtg.mtgwalletbe.security.service.AccountRecoveryService;
-import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Profile;
@@ -19,7 +18,7 @@ public class AccountRecoveryApi {
 
     @PostMapping("/request")
     public ResponseEntity<Void> requestAccountRecovery(@RequestBody @Valid AccountRecoveryInitRequest request)
-            throws MessagingException, MtgWalletGenericException {
+            throws MtgWalletGenericException {
         accountRecoveryService.initiateAccountRecovery(request);
         return ResponseEntity.ok().build();
     }

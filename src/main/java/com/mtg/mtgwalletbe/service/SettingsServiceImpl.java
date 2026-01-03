@@ -10,7 +10,6 @@ import com.mtg.mtgwalletbe.security.service.EmailVerificationService;
 import com.mtg.mtgwalletbe.security.service.TotpService;
 import com.mtg.mtgwalletbe.service.dto.SettingsDto;
 import com.mtg.mtgwalletbe.service.dto.WalletUserDto;
-import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -35,7 +34,7 @@ public class SettingsServiceImpl implements SettingsService {
 
     @Override
     @Transactional
-    public SettingsDto updateSettings(UpdateSettingsRequest request) throws MtgWalletGenericException, MessagingException {
+    public SettingsDto updateSettings(UpdateSettingsRequest request) throws MtgWalletGenericException {
         WalletUserDto walletUserDto = userService.getCurrentLoggedInUserFull();
 
         if (!request.getEmail().equals(walletUserDto.getEmail())) {
