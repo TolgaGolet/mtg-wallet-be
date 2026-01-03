@@ -15,7 +15,6 @@ import com.mtg.mtgwalletbe.security.api.response.AuthenticationResponse;
 import com.mtg.mtgwalletbe.security.api.response.TotpSetupResponse;
 import dev.samstevens.totp.exceptions.QrGenerationException;
 import io.jsonwebtoken.ExpiredJwtException;
-import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -46,7 +45,7 @@ public class AuthenticationService {
     private final TotpService totpService;
     private static final Integer MAX_USER_TOKEN_COUNT = 5;
 
-    public AuthenticationResponse register(RegisterRequest request) throws MtgWalletGenericException, MessagingException {
+    public AuthenticationResponse register(RegisterRequest request) throws MtgWalletGenericException {
         if (walletUserRepository.findByUsername(request.getUsername()).isPresent()) {
             throw new MtgWalletGenericException(GenericExceptionMessages.USERNAME_ALREADY_EXISTS.getMessage());
         }

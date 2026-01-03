@@ -6,7 +6,6 @@ import com.mtg.mtgwalletbe.security.api.response.AuthenticationResponse;
 import com.mtg.mtgwalletbe.security.api.response.TotpSetupResponse;
 import com.mtg.mtgwalletbe.security.service.AuthenticationService;
 import dev.samstevens.totp.exceptions.QrGenerationException;
-import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +25,7 @@ public class AuthenticationApi {
     private final AuthenticationService authenticationService;
 
     @PostMapping("/register")
-    public ResponseEntity<AuthenticationResponse> register(@RequestBody @Validated RegisterRequest request) throws MtgWalletGenericException, MessagingException {
+    public ResponseEntity<AuthenticationResponse> register(@RequestBody @Validated RegisterRequest request) throws MtgWalletGenericException {
         return ResponseEntity.ok(authenticationService.register(request));
     }
 

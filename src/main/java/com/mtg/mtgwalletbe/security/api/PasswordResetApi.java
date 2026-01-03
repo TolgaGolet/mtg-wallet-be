@@ -4,7 +4,6 @@ import com.mtg.mtgwalletbe.exception.MtgWalletGenericException;
 import com.mtg.mtgwalletbe.security.api.request.PasswordResetRequest;
 import com.mtg.mtgwalletbe.security.api.request.ResetPasswordInitRequest;
 import com.mtg.mtgwalletbe.security.service.PasswordResetService;
-import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Profile;
@@ -19,8 +18,7 @@ public class PasswordResetApi {
     private final PasswordResetService passwordResetService;
 
     @PostMapping("/request")
-    public ResponseEntity<Void> requestPasswordReset(@RequestBody @Valid ResetPasswordInitRequest request)
-            throws MessagingException {
+    public ResponseEntity<Void> requestPasswordReset(@RequestBody @Valid ResetPasswordInitRequest request) {
         passwordResetService.initiatePasswordReset(request.getEmail());
         return ResponseEntity.ok().build();
     }
