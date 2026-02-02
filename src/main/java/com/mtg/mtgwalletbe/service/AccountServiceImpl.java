@@ -35,7 +35,7 @@ public class AccountServiceImpl implements AccountService {
     private final AccountServiceMapper mapper;
     private final UserService userService;
     private final UserServiceMapper userServiceMapper;
-    public static final int MAX_ALLOWED_ACCOUNT_COUNT = 20;
+    public static final int MAX_ALLOWED_ACCOUNT_COUNT = 40;
 
     @Override
     public AccountDto create(AccountCreateRequest accountCreateRequest) throws MtgWalletGenericException {
