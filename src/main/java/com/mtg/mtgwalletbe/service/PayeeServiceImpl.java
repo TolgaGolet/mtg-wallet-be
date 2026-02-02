@@ -43,7 +43,7 @@ public class PayeeServiceImpl implements PayeeService {
     private final UserService userService;
     private final UserServiceMapper userServiceMapper;
     private final CategoryServiceMapper categoryServiceMapper;
-    public static final int MAX_ALLOWED_PAYEE_COUNT = 100;
+    public static final int MAX_ALLOWED_PAYEE_COUNT = 200;
 
     @Override
     public PayeeDto create(PayeeCreateRequest payeeCreateRequest) throws MtgWalletGenericException {
