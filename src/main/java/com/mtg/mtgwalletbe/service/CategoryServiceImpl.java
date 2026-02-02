@@ -38,7 +38,7 @@ public class CategoryServiceImpl implements CategoryService {
     private final CategoryServiceMapper mapper;
     private final UserService userService;
     private final UserServiceMapper userServiceMapper;
-    public static final int MAX_ALLOWED_CATEGORY_COUNT = 100;
+    public static final int MAX_ALLOWED_CATEGORY_COUNT = 200;
 
     @Override
     public CategoryDto create(CategoryCreateRequest categoryCreateRequest) throws MtgWalletGenericException {
