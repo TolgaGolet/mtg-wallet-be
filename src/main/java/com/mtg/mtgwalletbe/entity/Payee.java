@@ -15,7 +15,7 @@ import lombok.*;
         @Index(columnList = "user_id")
 })
 public class Payee extends Auditable {
-    public static final String PAYEE_NAME_REGULAR_EXPRESSION = "^[a-zA-Z0-9\\sçğıöşü]+$";
+    public static final String PAYEE_NAME_REGULAR_EXPRESSION = "^[a-zA-Z0-9\\sçğıöşüÇĞİÖŞÜ]+$";
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
