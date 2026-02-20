@@ -9,6 +9,7 @@ import org.springframework.data.jpa.domain.Specification;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class CategorySpecification {
 
@@ -22,7 +23,7 @@ public class CategorySpecification {
             if (request.getName() != null) {
                 predicates.add(criteriaBuilder.like(
                         criteriaBuilder.lower(root.get("name")),
-                        "%" + request.getName().trim().toLowerCase() + "%"
+                        "%" + request.getName().trim().toLowerCase(Locale.forLanguageTag("tr")) + "%"
                 ));
             }
             if (request.getTransactionTypeValue() != null) {
