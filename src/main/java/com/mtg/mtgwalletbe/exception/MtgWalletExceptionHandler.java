@@ -28,7 +28,7 @@ public class MtgWalletExceptionHandler {
     public ResponseEntity<String> handleException(MtgWalletGenericException ex) {
         log.error("An error occurred: {} {} {}", ex.getMessage(), ex.getCause(), Arrays.toString(ex.getStackTrace()));
         ServiceLog loggedError = logError(ex);
-        String errorMessage = "An error occurred: " + ex.getMessage() + ". Tracking ID: " + loggedError.getId();
+        String errorMessage = "An error occurred: " + ex.getMessage() + ". " + loggedError.getId();
         // Returned HTTP status codes for exceptions are managed from here
         HttpStatus httpStatus = switch (GenericExceptionMessages.fromMessage(ex.getMessage())) {
             case USERNAME_ALREADY_EXISTS, EMAIL_ALREADY_EXISTS -> HttpStatus.CONFLICT;
@@ -46,7 +46,7 @@ public class MtgWalletExceptionHandler {
     public ResponseEntity<String> handleException(AccessDeniedException ex) {
         log.error("An error occurred: {} {} {}", ex.getMessage(), ex.getCause(), Arrays.toString(ex.getStackTrace()));
         ServiceLog loggedError = logError(ex);
-        return new ResponseEntity<>("Access denied. Tracking ID: " + loggedError.getId(), HttpStatus.FORBIDDEN);
+        return new ResponseEntity<>("Access denied. " + loggedError.getId(), HttpStatus.FORBIDDEN);
     }
 
     /*
@@ -57,7 +57,7 @@ public class MtgWalletExceptionHandler {
         log.error("An unexpected error occurred: {} {} {}", ex.getMessage(), ex.getCause(), Arrays.toString(ex.getStackTrace()));
         ServiceLog loggedError = logError(ex);
         // ex.getMessage() for unexpected exceptions is not exposed on purpose
-        return new ResponseEntity<>("An unexpected error occurred! Tracking ID: " + loggedError.getId(), HttpStatus.INTERNAL_SERVER_ERROR);
+        return new ResponseEntity<>("An unexpected error occurred! " + loggedError.getId(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     private ServiceLog logError(Exception ex) {

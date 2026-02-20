@@ -9,6 +9,7 @@ import org.springframework.data.jpa.domain.Specification;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class TransactionSpecification {
 
@@ -28,7 +29,7 @@ public class TransactionSpecification {
             if (request.getPayeeName() != null) {
                 predicates.add(criteriaBuilder.like(
                         criteriaBuilder.lower(root.get("payee").get("name")),
-                        "%" + request.getPayeeName().trim().toLowerCase() + "%"
+                        "%" + request.getPayeeName().trim().toLowerCase(Locale.forLanguageTag("tr")) + "%"
                 ));
             }
             if (request.getAmount() != null) {
@@ -53,7 +54,7 @@ public class TransactionSpecification {
             if (request.getNotes() != null) {
                 predicates.add(criteriaBuilder.like(
                         criteriaBuilder.lower(root.get("notes")),
-                        "%" + request.getNotes().trim().toLowerCase() + "%"
+                        "%" + request.getNotes().trim().toLowerCase(Locale.forLanguageTag("tr")) + "%"
                 ));
             }
             if (request.getUserId() != null) {
