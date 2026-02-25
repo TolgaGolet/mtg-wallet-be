@@ -27,10 +27,13 @@ public class HomeServiceImpl implements HomeService {
         response.setProfitLoss(transactionService.getProfitLossByCurrentUserAndDateIntervalAndCurrency(getStartDateByInterval(interval), LocalDateTime.now(), currency));
         if (response.getProfitLoss().compareTo(BigDecimal.ZERO) == 0) {
             response.setProfitLossPercentage(BigDecimal.ZERO);
-        } else if (response.getNetValue().compareTo(BigDecimal.ZERO) == 0) {
-            response.setProfitLossPercentage(BigDecimal.ZERO);
         } else {
-            response.setProfitLossPercentage(response.getProfitLoss().multiply(BigDecimal.valueOf(100)).divide(response.getNetValue(), RoundingMode.HALF_UP));
+            BigDecimal initialBalance = response.getNetValue().subtract(response.getProfitLoss());
+            if (initialBalance.compareTo(BigDecimal.ZERO) <= 0) {
+                response.setProfitLossPercentage(BigDecimal.valueOf(response.getProfitLoss().signum() * 100L));
+            } else {
+                response.setProfitLossPercentage(response.getProfitLoss().multiply(BigDecimal.valueOf(100)).divide(initialBalance, 2, RoundingMode.HALF_UP));
+            }
         }
         return response;
     }
