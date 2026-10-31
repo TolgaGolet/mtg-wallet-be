@@ -1,4 +1,4 @@
-FROM eclipse-temurin:21-jdk-jammy AS build
+FROM eclipse-temurin:21.0.13_9-jdk-jammy AS build
 
 # Install Maven
 RUN apt-get update \
@@ -13,7 +13,7 @@ COPY . .
 RUN mvn clean package -DskipTests
 
 # Use the Eclipse Temurin 21 JRE image as the base for the final image
-FROM eclipse-temurin:21-jre-jammy
+FROM eclipse-temurin:21.0.13_9-jre-jammy
 
 # Copy the built JAR file from the build image
 COPY --from=build /target/mtg-wallet-be-0.0.1-SNAPSHOT.jar mtg-wallet-be.jar
