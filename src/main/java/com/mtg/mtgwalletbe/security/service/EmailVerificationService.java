@@ -60,10 +60,10 @@ public class EmailVerificationService {
 
     public void verifyEmail(String token) throws MtgWalletGenericException {
         EmailVerificationToken emailVerificationToken = emailVerificationTokenRepository.findByToken(token)
-                .orElseThrow(() -> new MtgWalletGenericException(GenericExceptionMessages.INVALID_EMAIL_VERIFICATION_TOKEN.getMessage()));
+                .orElseThrow(() -> new MtgWalletGenericException(GenericExceptionMessages.INVALID_EMAIL_VERIFICATION_TOKEN));
 
         if (emailVerificationToken.isExpired()) {
-            throw new MtgWalletGenericException(GenericExceptionMessages.EXPIRED_EMAIL_VERIFICATION_TOKEN.getMessage());
+            throw new MtgWalletGenericException(GenericExceptionMessages.EXPIRED_EMAIL_VERIFICATION_TOKEN);
         }
 
         WalletUser user = emailVerificationToken.getUser();

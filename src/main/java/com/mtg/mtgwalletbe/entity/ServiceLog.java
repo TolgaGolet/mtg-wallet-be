@@ -17,7 +17,8 @@ import static com.mtg.mtgwalletbe.aspect.LoggableAspect.MAX_CHARS_RESPONSE;
 @AllArgsConstructor
 @Entity
 @Table(indexes = {
-        @Index(columnList = "serviceName, createdDate, status")
+        @Index(columnList = "serviceName, createdDate, status"),
+        @Index(columnList = "createdDate") // retention cleanup
 })
 public class ServiceLog extends Auditable {
     @Id

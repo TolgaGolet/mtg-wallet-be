@@ -1,5 +1,6 @@
 package com.mtg.mtgwalletbe.api.request;
 
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -9,7 +10,7 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import static com.mtg.mtgwalletbe.entity.Payee.PAYEE_NAME_REGULAR_EXPRESSION;
+import static com.mtg.mtgwalletbe.api.request.ValidationPatterns.NAME_REGULAR_EXPRESSION;
 
 @Data
 public class TransactionUpdateRequest {
@@ -20,11 +21,12 @@ public class TransactionUpdateRequest {
     private Long payeeId;
     // When creating a new payee
     @Size(min = 3, max = 50)
-    @Pattern(regexp = PAYEE_NAME_REGULAR_EXPRESSION)
+    @Pattern(regexp = NAME_REGULAR_EXPRESSION)
     private String payeeName;
     // When creating a new payee
     private Long categoryId;
     @NotNull
+    @DecimalMin("0.01") // same rule as the frontend transaction form
     @Digits(integer = 16, fraction = 2)
     private BigDecimal amount;
     @NotNull

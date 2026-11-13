@@ -11,7 +11,6 @@ import com.mtg.mtgwalletbe.service.dto.CategoryDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import java.util.List;
 
 public interface CategoryService {
     CategoryDto create(CategoryCreateRequest categoryCreateRequest) throws MtgWalletGenericException;
@@ -22,9 +21,10 @@ public interface CategoryService {
 
     void delete(Long id) throws MtgWalletGenericException;
 
-    public List<CategoryDto> findAllByCurrentUserByStatus(Status status);
 
     CategoryDto getCategory(Long id) throws MtgWalletGenericException;
+
+    CategoryDto getActiveCategory(Long id) throws MtgWalletGenericException;
 
     CategoryCreateScreenEnumResponse getCategoryCreateScreenEnums();
 }

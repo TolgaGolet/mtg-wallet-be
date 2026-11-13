@@ -3,6 +3,7 @@ package com.mtg.mtgwalletbe.enums;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.mtg.mtgwalletbe.exception.InvalidEnumValueException;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -22,6 +23,6 @@ public enum Currency {
 
     @JsonCreator
     public static Currency of(@JsonProperty("value") String value) {
-        return Arrays.stream(Currency.values()).filter(item -> Objects.equals(item.getValue(), value)).findFirst().orElseThrow(() -> new IllegalArgumentException("IllegalArgumentException with value: " + value));
+        return Arrays.stream(Currency.values()).filter(item -> Objects.equals(item.getValue(), value)).findFirst().orElseThrow(() -> new InvalidEnumValueException(value));
     }
 }

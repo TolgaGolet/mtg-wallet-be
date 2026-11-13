@@ -10,4 +10,5 @@ public class WalletUserBasicDto {
     private String name;
     private String surname;
     private Boolean isDefaultsCreated;
+    private Boolean totpEnabled;
 }

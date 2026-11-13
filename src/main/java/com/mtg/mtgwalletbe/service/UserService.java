@@ -1,10 +1,11 @@
 package com.mtg.mtgwalletbe.service;
 
 import com.mtg.mtgwalletbe.api.request.ChangePasswordRequest;
+import com.mtg.mtgwalletbe.entity.Payee;
+import com.mtg.mtgwalletbe.entity.WalletUser;
 import com.mtg.mtgwalletbe.exception.MtgWalletGenericException;
 import com.mtg.mtgwalletbe.service.dto.RoleDto;
 import com.mtg.mtgwalletbe.service.dto.WalletUserBasicDto;
-import com.mtg.mtgwalletbe.service.dto.WalletUserDto;
 
 import java.util.Optional;
 
@@ -13,21 +14,43 @@ public interface UserService {
 
     void addRoleToUser(String username, String roleName) throws MtgWalletGenericException;
 
-    WalletUserDto getUserFullInfo(String username);
-
     WalletUserBasicDto getUserBasicInfo(String username);
 
-    public Optional<String> getCurrentLoggedInUsername();
+    Optional<String> getCurrentLoggedInUsername();
 
-    public WalletUserBasicDto getCurrentLoggedInUser();
+    /**
+     * Id of the authenticated user, read from the security principal (no query).
+     */
+    Long getCurrentUserId();
 
-    public WalletUserDto getCurrentLoggedInUserFull();
+    /**
+     * Basic info of the authenticated user, read from the security principal (no query).
+     */
+    WalletUserBasicDto getCurrentLoggedInUser();
 
-    public void validateUserIdIfItsTheCurrentUser(Long userId) throws MtgWalletGenericException;
+    /**
+     * The authenticated user as a managed entity, for reading sensitive fields (password hash, TOTP secret) inside a
+     * service transaction. Never return it from a controller.
+     */
+    WalletUser getCurrentUserEntity();
 
-    WalletUserDto updateUser(WalletUserDto walletUserDto) throws MtgWalletGenericException;
+    void validateUserIdIfItsTheCurrentUser(Long userId) throws MtgWalletGenericException;
+
+
+    void setDefaultPayeeForExpense(Payee payee);
+
+    void setDefaultPayeeForIncome(Payee payee);
 
     void changePassword(ChangePasswordRequest request) throws MtgWalletGenericException;
 
-    void deleteUser(WalletUserDto walletUser);
+    /**
+     * Updates name, surname and email of the current user. A new email is marked unverified.
+     *
+     * @return true when the email changed
+     */
+    boolean updateProfile(String name, String surname, String email);
+
+    void anonymizeCurrentUser();
+
+    boolean emailExists(String email);
 }

@@ -45,4 +45,10 @@ public class Account extends Auditable {
     @NotNull
     @Column(length = 10)
     private Status status;
+    // Optimistic locking: stops concurrent writes from silently overwriting the
+    // balance.
+    // The column default fills existing rows when ddl-auto adds the column.
+    @Version
+    @Column(nullable = false, columnDefinition = "bigint default 0 not null")
+    private Long version;
 }

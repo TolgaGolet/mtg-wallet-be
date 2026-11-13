@@ -13,8 +13,7 @@ import lombok.*;
 @AllArgsConstructor
 @Entity
 @Table(indexes = {
-        @Index(columnList = "user_id"),
-        @Index(columnList = "token")
+        @Index(columnList = "user_id")
 })
 public class UserToken extends Auditable {
     @Id
@@ -23,15 +22,35 @@ public class UserToken extends Auditable {
     private Long id;
     @NotNull
     @Column(unique = true)
-    public String token;
+    private String token;
     @Enumerated(EnumType.STRING)
-    public TokenType tokenType = TokenType.BEARER;
-    public boolean revoked;
-    public boolean expired;
+    @Builder.Default
+    private TokenType tokenType = TokenType.BEARER;
+    private boolean revoked;
+    private boolean expired;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    public WalletUser user;
+    private WalletUser user;
+
+    /**
+     * Usable for authentication: neither expired nor revoked.
+     */
+    public boolean isActive() {
+        return !expired && !revoked;
+    }
+
+    /**
+     * Active and of the given kind, so a refresh token can't be used as an access token or the other way around.
+     */
+    public boolean isActiveAs(TokenType type) {
+        return tokenType == type && isActive();
+    }
+
+    public void revoke() {
+        this.expired = true;
+        this.revoked = true;
+    }
 }

@@ -1,5 +1,6 @@
 package com.mtg.mtgwalletbe.api;
 
+import com.mtg.mtgwalletbe.config.ApplicationConfigProperties;
 import com.mtg.mtgwalletbe.api.request.CategoryCreateRequest;
 import com.mtg.mtgwalletbe.api.request.CategorySearchRequest;
 import com.mtg.mtgwalletbe.api.request.CategoryUpdateRequest;
@@ -17,12 +18,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import static com.mtg.mtgwalletbe.security.SecurityParams.DEFAULT_PAGE_SIZE;
 
 @RestController
 @RequestMapping("/category")
 @RequiredArgsConstructor
 public class CategoryApi {
+    private final ApplicationConfigProperties applicationConfigProperties;
     private final CategoryService categoryService;
     private final CategoryServiceMapper categoryServiceMapper;
 
@@ -33,7 +34,7 @@ public class CategoryApi {
 
     @PostMapping("/search")
     public ResponseEntity<Page<CategoryResponse>> search(@RequestBody @Validated CategorySearchRequest request, @RequestParam(name = "pageNo", defaultValue = "0") int pageNo) {
-        return ResponseEntity.ok(categoryService.search(request, Status.ACTIVE, PageRequest.of(pageNo, DEFAULT_PAGE_SIZE, Sort.by("name").ascending())));
+        return ResponseEntity.ok(categoryService.search(request, Status.ACTIVE, PageRequest.of(pageNo, applicationConfigProperties.getDefaultPageSize(), Sort.by("name").ascending())));
     }
 
     @PutMapping("/update/{id}")
@@ -41,7 +42,7 @@ public class CategoryApi {
         return ResponseEntity.ok(categoryServiceMapper.toCategoryResponse(categoryService.update(categoryUpdateRequest, id)));
     }
 
-    @DeleteMapping("delete/{id}")
+    @DeleteMapping("/delete/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) throws MtgWalletGenericException {
         categoryService.delete(id);
         return ResponseEntity.ok().build();

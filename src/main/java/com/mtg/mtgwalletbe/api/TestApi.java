@@ -2,7 +2,7 @@ package com.mtg.mtgwalletbe.api;
 
 import com.mtg.mtgwalletbe.annotation.Loggable;
 import com.mtg.mtgwalletbe.service.UserService;
-import com.mtg.mtgwalletbe.service.dto.WalletUserDto;
+import com.mtg.mtgwalletbe.service.dto.WalletUserBasicDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
@@ -27,7 +27,7 @@ public class TestApi {
 
     @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping("/get-user/{username}")
-    public ResponseEntity<WalletUserDto> getUser(@PathVariable(name = "username") String username) {
-        return ResponseEntity.ok(userService.getUserFullInfo(username));
+    public ResponseEntity<WalletUserBasicDto> getUser(@PathVariable(name = "username") String username) {
+        return ResponseEntity.ok(userService.getUserBasicInfo(username));
     }
 }
