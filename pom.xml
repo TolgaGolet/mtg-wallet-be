@@ -19,7 +19,7 @@
         <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
         <org.springdoc.version>3.2.0</org.springdoc.version>
         <io.jsonwebtoken.version>0.12.7</io.jsonwebtoken.version>
-        <com.mailjet.version>5.2.5</com.mailjet.version>
+        <com.mailjet.version>6.2.0</com.mailjet.version>
     </properties>
 
     <dependencies>
