@@ -5,7 +5,10 @@ import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -13,6 +16,9 @@ import java.time.LocalDateTime;
 import static com.mtg.mtgwalletbe.api.request.ValidationPatterns.NAME_REGULAR_EXPRESSION;
 
 @Data
+@Builder
+@NoArgsConstructor // Jackson 3 needs it to deserialize request bodies
+@AllArgsConstructor
 public class TransactionUpdateRequest {
     @NotNull
     @Size(min = 1, max = 15)
