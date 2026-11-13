@@ -1,5 +1,6 @@
 package com.mtg.mtgwalletbe.api;
 
+import com.mtg.mtgwalletbe.config.ApplicationConfigProperties;
 import com.mtg.mtgwalletbe.api.request.PayeeCreateRequest;
 import com.mtg.mtgwalletbe.api.request.PayeeSearchRequest;
 import com.mtg.mtgwalletbe.api.request.PayeeUpdateRequest;
@@ -17,12 +18,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import static com.mtg.mtgwalletbe.security.SecurityParams.DEFAULT_PAGE_SIZE;
 
 @RestController
 @RequestMapping("/payee")
 @RequiredArgsConstructor
 public class PayeeApi {
+    private final ApplicationConfigProperties applicationConfigProperties;
     private final PayeeService payeeService;
     private final PayeeServiceMapper payeeServiceMapper;
 
@@ -39,7 +40,7 @@ public class PayeeApi {
 
     @PostMapping("/search")
     public ResponseEntity<Page<PayeeResponse>> search(@RequestBody @Validated PayeeSearchRequest request, @RequestParam(name = "pageNo", defaultValue = "0") int pageNo) {
-        return ResponseEntity.ok(payeeService.search(request, Status.ACTIVE, PageRequest.of(pageNo, DEFAULT_PAGE_SIZE, Sort.by("name").ascending())));
+        return ResponseEntity.ok(payeeService.search(request, Status.ACTIVE, PageRequest.of(pageNo, applicationConfigProperties.getDefaultPageSize(), Sort.by("name").ascending())));
     }
 
     @PutMapping("/update/{id}")
@@ -47,24 +48,24 @@ public class PayeeApi {
         return ResponseEntity.ok(payeeServiceMapper.toPayeeResponse(payeeService.update(payeeUpdateRequest, id)));
     }
 
-    @DeleteMapping("delete/{id}")
+    @DeleteMapping("/delete/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) throws MtgWalletGenericException {
         payeeService.delete(id);
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/create/enums")
-    public ResponseEntity<PayeeCreateScreenEnumResponse> getCategoryCreateScreenEnums() {
+    public ResponseEntity<PayeeCreateScreenEnumResponse> getPayeeCreateScreenEnums() {
         return ResponseEntity.ok(payeeService.getPayeeCreateScreenEnums());
     }
 
-    @PostMapping("/add-default-payee-for-expense-to-user")
+    @PostMapping("/default-payee-for-expense")
     public ResponseEntity<Void> addDefaultPayeeForExpenseToUser(@RequestParam(name = "payeeId") Long payeeId) throws MtgWalletGenericException {
         payeeService.addDefaultPayeeForExpenseToUser(payeeId);
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping("/user/add-default-payee-for-income-to-user")
+    @PostMapping("/default-payee-for-income")
     public ResponseEntity<Void> addDefaultPayeeForIncomeToUser(@RequestParam(name = "payeeId") Long payeeId) throws MtgWalletGenericException {
         payeeService.addDefaultPayeeForIncomeToUser(payeeId);
         return ResponseEntity.ok().build();

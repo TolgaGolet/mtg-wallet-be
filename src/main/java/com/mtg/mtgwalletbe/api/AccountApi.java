@@ -17,7 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import static com.mtg.mtgwalletbe.service.AccountServiceImpl.MAX_ALLOWED_ACCOUNT_COUNT;
+import static com.mtg.mtgwalletbe.service.DomainLimits.MAX_ACCOUNTS;
 
 @RestController
 @RequestMapping("/account")
@@ -33,7 +33,7 @@ public class AccountApi {
 
     @PostMapping("/search")
     public ResponseEntity<Page<AccountResponse>> search(@RequestBody @Validated AccountSearchRequest request, @RequestParam(name = "pageNo", defaultValue = "0") int pageNo) {
-        return ResponseEntity.ok(accountService.search(request, Status.ACTIVE, PageRequest.of(pageNo, MAX_ALLOWED_ACCOUNT_COUNT, Sort.by("name").ascending())));
+        return ResponseEntity.ok(accountService.search(request, Status.ACTIVE, PageRequest.of(pageNo, MAX_ACCOUNTS, Sort.by("name").ascending())));
     }
 
     @PutMapping("/update/{id}")
@@ -41,7 +41,7 @@ public class AccountApi {
         return ResponseEntity.ok(accountServiceMapper.toAccountResponse(accountService.update(accountUpdateRequest, id)));
     }
 
-    @DeleteMapping("delete/{id}")
+    @DeleteMapping("/delete/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) throws MtgWalletGenericException {
         accountService.delete(id);
         return ResponseEntity.ok().build();

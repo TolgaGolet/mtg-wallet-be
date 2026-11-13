@@ -1,8 +1,7 @@
 package com.mtg.mtgwalletbe.security.filter;
 
-import com.github.benmanes.caffeine.cache.CacheLoader;
+import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.LoadingCache;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -16,31 +15,39 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * Fixed-window rate limiting per client IP (in-memory, per instance).
+ * <p>
+ * The client IP is {@code request.getRemoteAddr()}. With {@code server.forward-headers-strategy=native},
+ * Tomcat sets it from X-Forwarded-For only when the request comes from a trusted (private-range) proxy,
+ * so clients can't pick their own key by spoofing the header.
+ */
 @Profile("!disabled-security")
 @Component
 public class RateLimitingFilter extends OncePerRequestFilter {
 
-    private final LoadingCache<String, Integer> requestCountsPerIpAddress;
+    static final long MAX_TRACKED_CLIENTS = 100_000;
+
+    private final Cache<String, AtomicInteger> requestCountsPerIpAddress;
     private final int rateLimitingMaxRequestsPerDuration;
 
     public RateLimitingFilter(@Value("${mtgWallet.security.rateLimitingMaxRequestsPerDuration}") int rateLimitingMaxRequestsPerDuration,
                               @Value("${mtgWallet.security.rateLimitingDurationInSeconds}") long rateLimitingDurationInSeconds) {
         super();
         this.rateLimitingMaxRequestsPerDuration = rateLimitingMaxRequestsPerDuration;
-        requestCountsPerIpAddress = Caffeine.newBuilder().
-                expireAfterWrite(rateLimitingDurationInSeconds, TimeUnit.SECONDS).build(new CacheLoader<String, Integer>() {
-                    public Integer load(String key) {
-                        return 0;
-                    }
-                });
+        // expireAfterWrite: the window starts at the client's first request; counter updates don't re-write the entry
+        this.requestCountsPerIpAddress = Caffeine.newBuilder()
+                .maximumSize(MAX_TRACKED_CLIENTS)
+                .expireAfterWrite(rateLimitingDurationInSeconds, TimeUnit.SECONDS)
+                .build();
     }
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain)
             throws IOException, ServletException {
-        String clientIpAddress = getClientIP(request);
-        if (isMaximumRequestsPerSecondExceeded(clientIpAddress)) {
+        if (isRateLimitExceeded(request.getRemoteAddr())) {
             response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
             response.getWriter().write("Too many requests");
             return;
@@ -48,29 +55,8 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    private boolean isMaximumRequestsPerSecondExceeded(String clientIpAddress) {
-        Integer requests = 0;
-        requests = requestCountsPerIpAddress.get(clientIpAddress);
-
-        if (requests != null) {
-            if (requests >= rateLimitingMaxRequestsPerDuration) {
-                requestCountsPerIpAddress.asMap().remove(clientIpAddress);
-                requestCountsPerIpAddress.put(clientIpAddress, requests);
-                return true;
-            }
-        } else {
-            requests = 0;
-        }
-        requests++;
-        requestCountsPerIpAddress.put(clientIpAddress, requests);
-        return false;
-    }
-
-    public String getClientIP(HttpServletRequest request) {
-        String xfHeader = request.getHeader("X-Forwarded-For");
-        if (xfHeader == null) {
-            return request.getRemoteAddr();
-        }
-        return xfHeader.split(",")[0];
+    private boolean isRateLimitExceeded(String clientIpAddress) {
+        AtomicInteger counter = requestCountsPerIpAddress.get(clientIpAddress, key -> new AtomicInteger());
+        return counter.incrementAndGet() > rateLimitingMaxRequestsPerDuration;
     }
 }

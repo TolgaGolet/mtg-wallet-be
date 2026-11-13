@@ -7,6 +7,8 @@ import com.mailjet.client.MailjetResponse;
 import com.mailjet.client.resource.Emailv31;
 import com.mtg.mtgwalletbe.annotation.Loggable;
 import lombok.extern.slf4j.Slf4j;
+
+import static com.mtg.mtgwalletbe.util.LogMasking.maskEmail;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
@@ -38,7 +40,7 @@ public class MailServiceImpl implements MailService {
     }
 
     @Override
-    @Loggable
+    @Loggable(logArgs = false, safeArgs = 1, emailArgs = 0) // logs masked recipient + subject, never the body with token links
     @Async
     public void send(String to, String subject, String text) {
         String htmlContent = """
@@ -104,7 +106,7 @@ public class MailServiceImpl implements MailService {
     }
 
     @Override
-    @Loggable
+    @Loggable(logArgs = false, safeArgs = 1, emailArgs = 0) // logs masked recipient + subject, never the body with token links
     @Async
     public void sendSimple(String to, String subject, String text) {
         sendEmail(to, subject, text, null);
@@ -134,13 +136,13 @@ public class MailServiceImpl implements MailService {
             MailjetResponse response = mailjetClient.post(request);
 
             if (response.getStatus() != 200) {
-                log.error("Failed to send email to {}. Status: {}, Data: {}",
-                        to, response.getStatus(), response.getData());
+                log.error("Failed to send email '{}' to {}. Status: {}, Data: {}",
+                        subject, maskEmail(to), response.getStatus(), response.getData());
             } else {
-                log.info("Email sent successfully to {}", to);
+                log.info("Email '{}' sent successfully to {}", subject, maskEmail(to));
             }
         } catch (Exception e) {
-            log.error("Error sending email to {}: {}", to, e.getMessage(), e);
+            log.error("Error sending email '{}' to {}", subject, maskEmail(to), e);
         }
     }
 }

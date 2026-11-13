@@ -25,6 +25,7 @@ public interface AccountServiceMapper {
     List<AccountResponse> toAccountResponseList(List<AccountDto> accountDtoList);
 
     @Mapping(source = "userId", target = "user.id")
+    @Mapping(target = "version", ignore = true)
     void updateAccountFromDto(AccountDto dto, @MappingTarget Account entity);
 
     List<AccountDto> toAccountDtoList(List<Account> accountList);

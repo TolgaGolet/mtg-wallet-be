@@ -75,13 +75,14 @@ public class WalletUser extends Auditable implements UserDetails {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private List<Category> categories;
-    @ManyToOne(fetch = FetchType.EAGER)
+    // LAZY: never read in a request, so the JWT filter's per-request user load doesn't join these
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "default_payee_id_for_expense")
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Payee defaultPayeeForExpense;
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "default_payee_id_for_income")
     @JsonIgnore
     @ToString.Exclude

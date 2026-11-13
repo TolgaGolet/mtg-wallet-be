@@ -11,12 +11,11 @@ import com.mtg.mtgwalletbe.service.dto.PayeeDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import java.util.List;
 
 public interface PayeeService {
     PayeeDto create(PayeeCreateRequest payeeCreateRequest) throws MtgWalletGenericException;
 
-    void createDefaults() throws MtgWalletGenericException;
+    void createDefaults();
 
     Page<PayeeResponse> search(PayeeSearchRequest request, Status status, Pageable pageable);
 
@@ -24,9 +23,10 @@ public interface PayeeService {
 
     void delete(Long id) throws MtgWalletGenericException;
 
-    public List<PayeeDto> findAllByCurrentUserByStatus(Status status);
 
     public PayeeDto getPayee(Long id) throws MtgWalletGenericException;
+
+    PayeeDto getActivePayee(Long id) throws MtgWalletGenericException;
 
     PayeeCreateScreenEnumResponse getPayeeCreateScreenEnums();
 

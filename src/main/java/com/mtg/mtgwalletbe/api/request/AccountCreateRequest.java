@@ -8,11 +8,13 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 
+import static com.mtg.mtgwalletbe.api.request.ValidationPatterns.NAME_REGULAR_EXPRESSION;
+
 @Data
 public class AccountCreateRequest {
     @NotNull
     @Size(min = 3, max = 50)
-    @Pattern(regexp = "^[a-zA-Z0-9\\sçğıöşü]+$")
+    @Pattern(regexp = NAME_REGULAR_EXPRESSION)
     private String name;
     @NotNull
     @Size(min = 1, max = 15)

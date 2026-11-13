@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
+@Transactional(readOnly = true)
 public class HomeServiceImpl implements HomeService {
     private final AccountService accountService;
     private final TransactionService transactionService;
@@ -22,9 +22,10 @@ public class HomeServiceImpl implements HomeService {
     public GetNetValueResponse getNetValue(String currencyValue, String intervalValue) {
         Currency currency = Currency.of(currencyValue);
         Interval interval = Interval.of(intervalValue);
+        LocalDateTime now = LocalDateTime.now(); // one instant for both ends of the interval
         GetNetValueResponse response = new GetNetValueResponse();
         response.setNetValue(accountService.getTotalBalanceByCurrentUserAndCurrency(currency));
-        response.setProfitLoss(transactionService.getProfitLossByCurrentUserAndDateIntervalAndCurrency(getStartDateByInterval(interval), LocalDateTime.now(), currency));
+        response.setProfitLoss(transactionService.getProfitLossByCurrentUserAndDateIntervalAndCurrency(getStartDateByInterval(now, interval), now, currency));
         if (response.getProfitLoss().compareTo(BigDecimal.ZERO) == 0) {
             response.setProfitLossPercentage(BigDecimal.ZERO);
         } else {
@@ -38,8 +39,8 @@ public class HomeServiceImpl implements HomeService {
         return response;
     }
 
-    private LocalDateTime getStartDateByInterval(Interval interval) {
-        LocalDateTime startDate = LocalDateTime.now();
+    private static LocalDateTime getStartDateByInterval(LocalDateTime now, Interval interval) {
+        LocalDateTime startDate = now;
         startDate = switch (interval) {
             case Interval.DAILY -> startDate.minusDays(1);
             case Interval.WEEKLY -> startDate.minusWeeks(1);

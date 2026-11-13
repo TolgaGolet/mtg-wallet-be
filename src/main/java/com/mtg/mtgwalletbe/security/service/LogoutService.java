@@ -1,5 +1,6 @@
 package com.mtg.mtgwalletbe.security.service;
 
+import com.mtg.mtgwalletbe.entity.UserToken;
 import com.mtg.mtgwalletbe.repository.UserTokenRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -24,14 +25,13 @@ public class LogoutService implements LogoutHandler {
         if (authHeader == null || !authHeader.startsWith(BEARER_PREFIX)) {
             return;
         }
-        jwt = authHeader.substring(7);
-        var storedToken = userTokenRepository.findByToken(jwt)
-                .orElse(null);
-        if (storedToken != null) {
-            storedToken.setExpired(true);
-            storedToken.setRevoked(true);
-            userTokenRepository.save(storedToken);
+        jwt = authHeader.substring(BEARER_PREFIX.length());
+        // Revokes every token of the user, including the refresh token issued alongside this access token
+        userTokenRepository.findByToken(jwt).ifPresent(storedToken -> {
+            var tokens = userTokenRepository.findAllNotFullyRevokedTokensByUserId(storedToken.getUser().getId());
+            tokens.forEach(UserToken::revoke);
+            userTokenRepository.saveAll(tokens);
             SecurityContextHolder.clearContext();
-        }
+        });
     }
 }

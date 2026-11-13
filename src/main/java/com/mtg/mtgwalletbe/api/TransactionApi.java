@@ -1,14 +1,15 @@
 package com.mtg.mtgwalletbe.api;
 
+import com.mtg.mtgwalletbe.config.ApplicationConfigProperties;
 import com.mtg.mtgwalletbe.api.request.TransactionCreateRequest;
 import com.mtg.mtgwalletbe.api.request.TransactionSearchRequest;
 import com.mtg.mtgwalletbe.api.request.TransactionUpdateRequest;
 import com.mtg.mtgwalletbe.api.response.TransactionCreateScreenEnumResponse;
+import com.mtg.mtgwalletbe.api.response.TransactionListResponse;
 import com.mtg.mtgwalletbe.api.response.TransactionResponse;
 import com.mtg.mtgwalletbe.exception.MtgWalletGenericException;
 import com.mtg.mtgwalletbe.mapper.TransactionServiceMapper;
 import com.mtg.mtgwalletbe.service.TransactionService;
-import com.mtg.mtgwalletbe.service.dto.TransactionDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -17,12 +18,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import static com.mtg.mtgwalletbe.security.SecurityParams.DEFAULT_PAGE_SIZE;
 
 @RestController
 @RequestMapping("/transaction")
 @RequiredArgsConstructor
 public class TransactionApi {
+    private final ApplicationConfigProperties applicationConfigProperties;
     private final TransactionService transactionService;
     private final TransactionServiceMapper transactionServiceMapper;
 
@@ -32,8 +33,8 @@ public class TransactionApi {
     }
 
     @PostMapping("/search")
-    public ResponseEntity<Page<TransactionDto>> search(@RequestBody @Validated TransactionSearchRequest request, @RequestParam(name = "pageNo", defaultValue = "0") int pageNo) {
-        return ResponseEntity.ok(transactionService.search(request, PageRequest.of(pageNo, DEFAULT_PAGE_SIZE, Sort.by("dateTime").descending())));
+    public ResponseEntity<Page<TransactionListResponse>> search(@RequestBody @Validated TransactionSearchRequest request, @RequestParam(name = "pageNo", defaultValue = "0") int pageNo) {
+        return ResponseEntity.ok(transactionService.search(request, PageRequest.of(pageNo, applicationConfigProperties.getDefaultPageSize(), Sort.by("dateTime").descending())).map(transactionServiceMapper::toTransactionListResponse));
     }
 
     @PutMapping("/update/{id}")
@@ -41,7 +42,7 @@ public class TransactionApi {
         return ResponseEntity.ok(transactionServiceMapper.toTransactionResponse(transactionService.update(transactionUpdateRequest, id)));
     }
 
-    @DeleteMapping("delete/{id}")
+    @DeleteMapping("/delete/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) throws MtgWalletGenericException {
         transactionService.delete(id);
         return ResponseEntity.ok().build();

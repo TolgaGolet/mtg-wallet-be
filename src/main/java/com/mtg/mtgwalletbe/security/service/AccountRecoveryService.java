@@ -71,10 +71,10 @@ public class AccountRecoveryService {
 
     private AccountRecoveryToken validateAndGetToken(String token) throws MtgWalletGenericException {
         AccountRecoveryToken recoveryToken = accountRecoveryTokenRepository.findByToken(token)
-                .orElseThrow(() -> new MtgWalletGenericException(GenericExceptionMessages.INVALID_ACCOUNT_RECOVERY_TOKEN.getMessage()));
+                .orElseThrow(() -> new MtgWalletGenericException(GenericExceptionMessages.INVALID_ACCOUNT_RECOVERY_TOKEN));
 
         if (recoveryToken.isExpired()) {
-            throw new MtgWalletGenericException(GenericExceptionMessages.EXPIRED_ACCOUNT_RECOVERY_TOKEN.getMessage());
+            throw new MtgWalletGenericException(GenericExceptionMessages.EXPIRED_ACCOUNT_RECOVERY_TOKEN);
         }
 
         return recoveryToken;

@@ -12,11 +12,11 @@ import com.mtg.mtgwalletbe.enums.TransactionType;
 import com.mtg.mtgwalletbe.exception.MtgWalletGenericException;
 import com.mtg.mtgwalletbe.exception.enums.GenericExceptionMessages;
 import com.mtg.mtgwalletbe.mapper.CategoryServiceMapper;
-import com.mtg.mtgwalletbe.mapper.UserServiceMapper;
 import com.mtg.mtgwalletbe.repository.CategoryRepository;
 import com.mtg.mtgwalletbe.service.dto.CategoryDto;
 import com.mtg.mtgwalletbe.service.dto.WalletUserBasicDto;
 import com.mtg.mtgwalletbe.specification.CategorySpecification;
+import com.mtg.mtgwalletbe.util.Names;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -30,6 +30,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import static com.mtg.mtgwalletbe.service.DomainLimits.MAX_CATEGORIES;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -37,41 +39,32 @@ public class CategoryServiceImpl implements CategoryService {
     private final CategoryRepository repository;
     private final CategoryServiceMapper mapper;
     private final UserService userService;
-    private final UserServiceMapper userServiceMapper;
-    public static final int MAX_ALLOWED_CATEGORY_COUNT = 200;
 
     @Override
     public CategoryDto create(CategoryCreateRequest categoryCreateRequest) throws MtgWalletGenericException {
         TransactionType transactionType = TransactionType.of(categoryCreateRequest.getTransactionTypeValue());
-        CategoryDto parentCategoryDto = null;
         WalletUserBasicDto walletUserDto = userService.getCurrentLoggedInUser();
-        List<CategoryDto> userCategories = findAllByCurrentUserByStatus(Status.ACTIVE);
-        if (userCategories.size() >= MAX_ALLOWED_CATEGORY_COUNT) {
-            throw new MtgWalletGenericException(GenericExceptionMessages.CATEGORIES_LIMIT_EXCEEDED.getMessage());
+        if (repository.countByUserIdAndStatus(walletUserDto.getId(), Status.ACTIVE) >= MAX_CATEGORIES) {
+            throw new MtgWalletGenericException(GenericExceptionMessages.CATEGORIES_LIMIT_EXCEEDED);
         }
-        if (userCategories.stream().anyMatch(category -> category.getTransactionType().equals(transactionType)
-                && category.getName().equals(categoryCreateRequest.getName()))) {
-            throw new MtgWalletGenericException(GenericExceptionMessages.CATEGORY_NAME_ALREADY_EXISTS.getMessage());
+        if (nameTaken(walletUserDto.getId(), transactionType, categoryCreateRequest.getName(), -1L)) {
+            throw new MtgWalletGenericException(GenericExceptionMessages.CATEGORY_NAME_ALREADY_EXISTS);
         }
+        Category parentCategory = null;
         if (categoryCreateRequest.getParentCategoryId() != null) {
-            parentCategoryDto = getCategory(categoryCreateRequest.getParentCategoryId());
-            if (parentCategoryDto == null) {
-                throw new MtgWalletGenericException(GenericExceptionMessages.CATEGORY_NOT_FOUND.getMessage());
-            }
-            if (parentCategoryDto.getParentCategoryId() != null) {
-                throw new MtgWalletGenericException(GenericExceptionMessages.CATEGORY_WITH_PARENT_CATEGORY_NOT_ALLOWED_AS_PARENT_CATEGORY.getMessage());
-            }
-            setIsParentTrueById(categoryCreateRequest.getParentCategoryId());
+            parentCategory = validateParent(categoryCreateRequest.getParentCategoryId(), null, transactionType);
+            markAsParent(parentCategory);
         }
         CategoryDto categoryDtoToSave = CategoryDto.builder().name(categoryCreateRequest.getName())
                 .transactionType(transactionType)
                 .userId(walletUserDto.getId())
-                .parentCategoryId(parentCategoryDto != null ? parentCategoryDto.getId() : null)
+                .parentCategoryId(parentCategory != null ? parentCategory.getId() : null)
                 .isParent(Boolean.FALSE).status(Status.ACTIVE).build();
         return mapper.toCategoryDto(repository.save(mapper.toCategoryEntity(categoryDtoToSave)));
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<CategoryResponse> search(CategorySearchRequest request, Status status, Pageable pageable) {
         WalletUserBasicDto walletUserDto = userService.getCurrentLoggedInUser();
         request.setUserId(walletUserDto.getId());
@@ -82,85 +75,114 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public CategoryDto update(CategoryUpdateRequest categoryUpdateRequest, Long id) throws MtgWalletGenericException {
-        Category category = repository.findByIdAndStatus(id, Status.ACTIVE).orElseThrow(() -> new MtgWalletGenericException(GenericExceptionMessages.CATEGORY_NOT_FOUND.getMessage()));
-        userService.validateUserIdIfItsTheCurrentUser(category.getUser().getId());
-        List<CategoryDto> userCategories = findAllByCurrentUserByStatus(Status.ACTIVE);
-        if (userCategories.stream().anyMatch(existingCategory -> !Objects.equals(existingCategory.getId(), id)
-                && existingCategory.getTransactionType().equals(category.getTransactionType())
-                && existingCategory.getName().equals(categoryUpdateRequest.getName()))) {
-            throw new MtgWalletGenericException(GenericExceptionMessages.CATEGORY_NAME_ALREADY_EXISTS.getMessage());
+        Category category = owned(repository.findByIdAndStatus(id, Status.ACTIVE));
+        if (nameTaken(category.getUser().getId(), category.getTransactionType(), categoryUpdateRequest.getName(), id)) {
+            throw new MtgWalletGenericException(GenericExceptionMessages.CATEGORY_NAME_ALREADY_EXISTS);
         }
+        Long newParentId = categoryUpdateRequest.getParentCategoryId();
+        if (newParentId != null && Boolean.TRUE.equals(category.getIsParent())) {
+            throw new MtgWalletGenericException(GenericExceptionMessages.PARENT_CATEGORY_CANT_HAVE_PARENT_CATEGORY);
+        }
+        Category parentCategory = newParentId != null ? validateParent(newParentId, id, category.getTransactionType()) : null;
+        Category oldParent = category.getParentCategory();
+
         category.setName(categoryUpdateRequest.getName());
-        Category parentCategory = null;
-        if (categoryUpdateRequest.getParentCategoryId() != null && category.getIsParent()) {
-            throw new MtgWalletGenericException(GenericExceptionMessages.PARENT_CATEGORY_CANT_HAVE_PARENT_CATEGORY.getMessage());
-        }
-        if (categoryUpdateRequest.getParentCategoryId() != null) {
-            parentCategory = mapper.toCategoryEntity(getCategory(categoryUpdateRequest.getParentCategoryId()));
-            if (parentCategory.getParentCategory() != null) {
-                throw new MtgWalletGenericException(GenericExceptionMessages.CATEGORY_WITH_PARENT_CATEGORY_NOT_ALLOWED_AS_PARENT_CATEGORY.getMessage());
-            }
-            setIsParentTrueById(parentCategory.getId());
-        } else if (category.getParentCategory() != null) {
-            setIsParentFalseByIdIfNotParent(category.getParentCategory().getId(), id);
-        }
         category.setParentCategory(parentCategory);
-        return mapper.toCategoryDto(repository.save(category));
-    }
+        Category saved = repository.saveAndFlush(category);
 
-    private void setIsParentTrueById(Long id) throws MtgWalletGenericException {
-        Category category = repository.findById(id).orElseThrow(() -> new MtgWalletGenericException(GenericExceptionMessages.CATEGORY_NOT_FOUND.getMessage()));
-        userService.validateUserIdIfItsTheCurrentUser(category.getUser().getId());
-        category.setIsParent(Boolean.TRUE);
-        repository.save(category);
-    }
-
-    private void setIsParentFalseByIdIfNotParent(Long id, Long oldChildId) throws MtgWalletGenericException {
-        Category category = repository.findById(id).orElseThrow(() -> new MtgWalletGenericException(GenericExceptionMessages.CATEGORY_NOT_FOUND.getMessage()));
-        userService.validateUserIdIfItsTheCurrentUser(category.getUser().getId());
-        boolean isParent = findAllByCurrentUserByStatus(Status.ACTIVE)
-                .stream()
-                .anyMatch(category1 -> category1.getParentCategoryId() != null &&
-                        !category1.getId().equals(id) &&
-                        !category1.getId().equals(oldChildId) &&
-                        category1.getParentCategoryId().equals(category.getId()));
-        if (isParent) {
-            return;
+        if (parentCategory != null) {
+            markAsParent(parentCategory);
         }
-        category.setIsParent(Boolean.FALSE);
-        repository.save(category);
+        if (oldParent != null && (parentCategory == null || !Objects.equals(oldParent.getId(), parentCategory.getId()))) {
+            refreshIsParent(oldParent);
+        }
+        return mapper.toCategoryDto(saved);
+    }
+
+    /**
+     * Loads and checks a would-be parent for a category of the given type. childId is null on create.
+     */
+    private Category validateParent(Long parentId, Long childId, TransactionType childType) throws MtgWalletGenericException {
+        if (Objects.equals(parentId, childId)) {
+            throw new MtgWalletGenericException(GenericExceptionMessages.CATEGORY_CANT_BE_ITS_OWN_PARENT);
+        }
+        Category parent = owned(repository.findByIdAndStatus(parentId, Status.ACTIVE));
+        if (parent.getParentCategory() != null) {
+            throw new MtgWalletGenericException(GenericExceptionMessages.CATEGORY_WITH_PARENT_CATEGORY_NOT_ALLOWED_AS_PARENT_CATEGORY);
+        }
+        if (parent.getTransactionType() != childType) {
+            throw new MtgWalletGenericException(GenericExceptionMessages.PARENT_CATEGORY_TRANSACTION_TYPE_MISMATCH);
+        }
+        return parent;
+    }
+
+    private void markAsParent(Category parent) {
+        if (!Boolean.TRUE.equals(parent.getIsParent())) {
+            parent.setIsParent(Boolean.TRUE);
+            repository.save(parent);
+        }
+    }
+
+    /**
+     * Re-derives the stored isParent flag from the actual active children.
+     */
+    private void refreshIsParent(Category category) {
+        boolean hasActiveChildren = repository.existsByParentCategoryIdAndStatus(category.getId(), Status.ACTIVE);
+        if (!Objects.equals(category.getIsParent(), hasActiveChildren)) {
+            category.setIsParent(hasActiveChildren);
+            repository.save(category);
+        }
     }
 
     @Override
     public void delete(Long id) throws MtgWalletGenericException {
-        Category category = repository.findById(id).orElseThrow(() -> new MtgWalletGenericException(GenericExceptionMessages.CATEGORY_NOT_FOUND.getMessage()));
-        userService.validateUserIdIfItsTheCurrentUser(category.getUser().getId());
+        Category category = owned(repository.findByIdAndStatus(id, Status.ACTIVE));
+        if (repository.existsByParentCategoryIdAndStatus(id, Status.ACTIVE)) {
+            throw new MtgWalletGenericException(GenericExceptionMessages.CATEGORY_HAS_ACTIVE_SUBCATEGORIES);
+        }
         category.setName("Deleted Category");
         category.setStatus(Status.DELETED);
-        repository.save(category);
-    }
-
-    @Override
-    public List<CategoryDto> findAllByCurrentUserByStatus(Status status) {
-        WalletUserBasicDto walletUserDto = userService.getCurrentLoggedInUser();
-        return mapper.toCategoryDtoList(repository.findAllByUserAndStatus(userServiceMapper.toWalletUserEntity(walletUserDto), status));
-    }
-
-    @Override
-    public CategoryDto getCategory(Long id) throws MtgWalletGenericException {
-        Optional<Category> category = repository.findById(id);
-        if (category.isPresent()) {
-            userService.validateUserIdIfItsTheCurrentUser(category.get().getUser().getId());
+        repository.saveAndFlush(category);
+        if (category.getParentCategory() != null) {
+            refreshIsParent(category.getParentCategory());
         }
-        return category.map(mapper::toCategoryDto).orElse(null);
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public CategoryDto getCategory(Long id) throws MtgWalletGenericException {
+        return mapper.toCategoryDto(owned(repository.findById(id)));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CategoryDto getActiveCategory(Long id) throws MtgWalletGenericException {
+        return mapper.toCategoryDto(owned(repository.findByIdAndStatus(id, Status.ACTIVE)));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public CategoryCreateScreenEnumResponse getCategoryCreateScreenEnums() {
         CategoryCreateScreenEnumResponse response = new CategoryCreateScreenEnumResponse();
-        Page<CategoryResponse> parentCategoriesPage = search(CategorySearchRequest.builder().childrenOnly(true).build(), Status.ACTIVE, PageRequest.of(0, MAX_ALLOWED_CATEGORY_COUNT, Sort.by("name").ascending()));
+        Page<CategoryResponse> parentCategoriesPage = search(CategorySearchRequest.builder().childrenOnly(true).build(), Status.ACTIVE, PageRequest.of(0, MAX_CATEGORIES, Sort.by("name").ascending()));
         List<CategorySelectResponse> parentCategories = parentCategoriesPage.getContent().stream().map(mapper::toCategorySelectResponse).toList();
         response.setParentCategoryList(parentCategories);
         return response;
+    }
+
+    /**
+     * Case-insensitive (Turkish rules) name check among the user's ACTIVE categories of the same type; loads names only.
+     */
+    private boolean nameTaken(Long userId, TransactionType type, String name, Long excludeId) {
+        return Names.containsName(repository.findNamesByUserIdAndStatusAndType(userId, Status.ACTIVE, type, excludeId), name);
+    }
+
+    /**
+     * Unwraps a lookup: CATEGORY_NOT_FOUND when empty, and the category must belong to the current user.
+     */
+    private Category owned(Optional<Category> lookup) throws MtgWalletGenericException {
+        Category category = lookup.orElseThrow(() -> new MtgWalletGenericException(GenericExceptionMessages.CATEGORY_NOT_FOUND));
+        userService.validateUserIdIfItsTheCurrentUser(category.getUser().getId());
+        return category;
     }
 }

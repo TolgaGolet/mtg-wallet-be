@@ -1,5 +1,6 @@
 package com.mtg.mtgwalletbe.mapper;
 
+import com.mtg.mtgwalletbe.api.response.TransactionListResponse;
 import com.mtg.mtgwalletbe.api.response.TransactionResponse;
 import com.mtg.mtgwalletbe.entity.Transaction;
 import com.mtg.mtgwalletbe.service.dto.TransactionDto;
@@ -20,4 +21,6 @@ public interface TransactionServiceMapper {
     @Mapping(source = "id", target = "transactionId")
     @Mapping(source = "type", target = "transactionType")
     TransactionResponse toTransactionResponse(TransactionDto transactionDto);
+
+    TransactionListResponse toTransactionListResponse(TransactionDto transactionDto);
 }

@@ -23,6 +23,8 @@ public interface AccountService {
 
     public AccountDto getAccountById(Long id) throws MtgWalletGenericException;
 
+    AccountDto getActiveAccountById(Long id) throws MtgWalletGenericException;
+
     AccountDto update(AccountUpdateRequest accountUpdateRequest, Long id) throws MtgWalletGenericException;
 
     AccountDto update(AccountDto accountDto) throws MtgWalletGenericException;

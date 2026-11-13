@@ -3,12 +3,12 @@ package com.mtg.mtgwalletbe.api.response;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.domain.Page;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class TransactionCreateScreenEnumResponse {
-    private Page<CategoryResponse> categoryList;
-    private Page<AccountResponse> accountList;
+    private List<CategoryResponse> categoryList;
+    private List<AccountResponse> accountList;
 }
