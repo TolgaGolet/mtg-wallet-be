@@ -1,5 +1,6 @@
 package com.mtg.mtgwalletbe.enums;
 
 public enum TokenType {
-    BEARER
+    BEARER, // access token
+    REFRESH
 }

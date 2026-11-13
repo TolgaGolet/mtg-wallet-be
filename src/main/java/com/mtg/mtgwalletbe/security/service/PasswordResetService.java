@@ -73,10 +73,10 @@ public class PasswordResetService {
 
     private PasswordResetToken validateAndGetToken(String token) throws MtgWalletGenericException {
         PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token)
-                .orElseThrow(() -> new MtgWalletGenericException(GenericExceptionMessages.INVALID_PASSWORD_RESET_TOKEN.getMessage()));
+                .orElseThrow(() -> new MtgWalletGenericException(GenericExceptionMessages.INVALID_PASSWORD_RESET_TOKEN));
 
         if (resetToken.isExpired()) {
-            throw new MtgWalletGenericException(GenericExceptionMessages.EXPIRED_PASSWORD_RESET_TOKEN.getMessage());
+            throw new MtgWalletGenericException(GenericExceptionMessages.EXPIRED_PASSWORD_RESET_TOKEN);
         }
 
         return resetToken;

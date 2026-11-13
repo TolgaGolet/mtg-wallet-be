@@ -1,5 +1,6 @@
 package com.mtg.mtgwalletbe.specification;
 
+import com.mtg.mtgwalletbe.util.Names;
 import com.mtg.mtgwalletbe.api.request.PayeeSearchRequest;
 import com.mtg.mtgwalletbe.entity.Payee;
 import com.mtg.mtgwalletbe.enums.Status;
@@ -9,7 +10,6 @@ import org.springframework.data.jpa.domain.Specification;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 public class PayeeSpecification {
 
@@ -23,11 +23,11 @@ public class PayeeSpecification {
             if (request.getName() != null) {
                 predicates.add(criteriaBuilder.like(
                         criteriaBuilder.lower(root.get("name")),
-                        "%" + request.getName().trim().toLowerCase(Locale.forLanguageTag("tr")) + "%"
+                        "%" + Names.normalize(request.getName()) + "%"
                 ));
             }
             if (request.getCategoryId() != null) {
-                predicates.add(criteriaBuilder.equal(root.get("category_id"), request.getId()));
+                predicates.add(criteriaBuilder.equal(root.get("category").get("id"), request.getCategoryId()));
             }
             if (request.getUserId() != null) {
                 predicates.add(criteriaBuilder.equal(root.get("user").get("id"), request.getUserId()));

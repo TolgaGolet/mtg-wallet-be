@@ -18,4 +18,5 @@ public class AccountDto {
     private BigDecimal balance;
     private Currency currency;
     private Status status;
+    private Long version;
 }

@@ -7,7 +7,6 @@ import lombok.Data;
 @Data
 @Builder
 public class ValidateTransactionDto {
-    private PayeeDto payeeDto;
     private AccountDto sourceAccountDto;
     private AccountDto targetAccountDto;
     private TransactionType transactionType;

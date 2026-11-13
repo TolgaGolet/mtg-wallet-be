@@ -1,5 +1,6 @@
 package com.mtg.mtgwalletbe.specification;
 
+import com.mtg.mtgwalletbe.util.Names;
 import com.mtg.mtgwalletbe.api.request.TransactionSearchRequest;
 import com.mtg.mtgwalletbe.entity.Transaction;
 import com.mtg.mtgwalletbe.enums.TransactionType;
@@ -9,7 +10,6 @@ import org.springframework.data.jpa.domain.Specification;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 public class TransactionSpecification {
 
@@ -29,17 +29,17 @@ public class TransactionSpecification {
             if (request.getPayeeName() != null) {
                 predicates.add(criteriaBuilder.like(
                         criteriaBuilder.lower(root.get("payee").get("name")),
-                        "%" + request.getPayeeName().trim().toLowerCase(Locale.forLanguageTag("tr")) + "%"
+                        "%" + Names.normalize(request.getPayeeName()) + "%"
                 ));
             }
             if (request.getAmount() != null) {
                 predicates.add(criteriaBuilder.equal(root.get("amount"), request.getAmount()));
             }
             if (request.getDateTime() != null) {
-                predicates.add(criteriaBuilder.equal(
-                        criteriaBuilder.function("DATE", LocalDateTime.class, root.get("dateTime")),
-                        criteriaBuilder.function("DATE", LocalDateTime.class, criteriaBuilder.literal(request.getDateTime()))
-                ));
+                // [start of day, start of next day): a plain range, so the dateTime indexes can be used
+                LocalDateTime dayStart = request.getDateTime().toLocalDate().atStartOfDay();
+                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("dateTime"), dayStart));
+                predicates.add(criteriaBuilder.lessThan(root.get("dateTime"), dayStart.plusDays(1)));
             }
             if (request.getSourceAccountId() != null || request.getTargetAccountId() != null) {
                 List<Predicate> sourceOrTargetAccountPredicates = new ArrayList<>();
@@ -54,7 +54,7 @@ public class TransactionSpecification {
             if (request.getNotes() != null) {
                 predicates.add(criteriaBuilder.like(
                         criteriaBuilder.lower(root.get("notes")),
-                        "%" + request.getNotes().trim().toLowerCase(Locale.forLanguageTag("tr")) + "%"
+                        "%" + Names.normalize(request.getNotes()) + "%"
                 ));
             }
             if (request.getUserId() != null) {

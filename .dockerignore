@@ -1,0 +1,8 @@
+.env
+.env.properties
+.git
+.idea
+target/
+.github
+*.md
+code-quality-report.html
