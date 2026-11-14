@@ -12,11 +12,13 @@ import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import static com.mtg.mtgwalletbe.security.SecurityParams.ERROR_CODE_HEADER;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -56,6 +58,20 @@ class MtgWalletExceptionHandlerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(expected);
         assertThat(response.getBody()).isEqualTo("An error occurred: " + error.getMessage() + ". 42");
+        // The code is only sent for client errors; 5xx constant names stay internal
+        assertThat(response.getHeaders().getFirst(ERROR_CODE_HEADER)).isEqualTo(expected.is4xxClientError() ? error.name() : null);
+    }
+
+    // Enum-backed errors raised outside MtgWalletGenericException must carry the same X-Error-Code
+    @Test
+    void usernameNotFound_carriesUserNotFoundCode() {
+        GenericExceptionMessages error = GenericExceptionMessages.USER_NOT_FOUND;
+
+        ResponseEntity<String> response = handler.handleException(new UsernameNotFoundException(error.getMessage()));
+
+        assertThat(response.getStatusCode()).isEqualTo(error.getStatus());
+        assertThat(response.getBody()).isEqualTo("An error occurred: " + error.getMessage() + ". 42");
+        assertThat(response.getHeaders().getFirst(ERROR_CODE_HEADER)).isEqualTo(error.name());
     }
 
     // The frontend refreshes the token and retries on any 401/403, so user-input errors must never use them
@@ -79,6 +95,7 @@ class MtgWalletExceptionHandlerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody()).isEqualTo("An error occurred: amount must be greater than or equal to 0.01");
+        assertThat(response.getHeaders().getFirst(ERROR_CODE_HEADER)).isEqualTo(GenericExceptionMessages.INVALID_REQUEST.name());
         verifyNoInteractions(serviceLogWriter);
     }
 
@@ -88,6 +105,7 @@ class MtgWalletExceptionHandlerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody()).startsWith("An error occurred: Invalid request");
+        assertThat(response.getHeaders().getFirst(ERROR_CODE_HEADER)).isEqualTo(GenericExceptionMessages.INVALID_REQUEST.name());
     }
 
     // Regression: every IllegalArgumentException used to be a 400, hiding server bugs as client errors
@@ -112,8 +130,9 @@ class MtgWalletExceptionHandlerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
         assertThat(response.getBody())
-                .contains(MtgWalletExceptionHandler.CONCURRENT_UPDATE_MESSAGE)
+                .contains(GenericExceptionMessages.CONCURRENT_UPDATE.getMessage())
                 .endsWith("42");
+        assertThat(response.getHeaders().getFirst(ERROR_CODE_HEADER)).isEqualTo(GenericExceptionMessages.CONCURRENT_UPDATE.name());
     }
 
     // Regression for CQ-14: if the log row can't be saved, the client still gets the real error

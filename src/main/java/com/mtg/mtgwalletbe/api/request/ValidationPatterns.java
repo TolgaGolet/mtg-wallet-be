@@ -1,7 +1,8 @@
 package com.mtg.mtgwalletbe.api.request;
 
 /**
- * Shared validation patterns. Keep in sync with the frontend form rules (mtg-wallet-fe).
+ * Shared validation patterns. Keep in sync with the frontend form rules in mtg-wallet-fe's
+ * src/validation/rules.js (its rules.test.js pins these strings).
  */
 public final class ValidationPatterns {
     /**

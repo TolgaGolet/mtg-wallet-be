@@ -21,7 +21,7 @@ Use the Maven wrapper (`mvnw.cmd` on Windows, `./mvnw` elsewhere):
 
 There is no linter configured. Tests are JUnit 5 + Mockito unit tests plus a `@SpringBootTest` context-load test that runs on the `unittest` profile (in-memory H2, `src/test/resources/application-unittest.properties`), so the build works offline. Add `@ActiveProfiles("unittest")` to any new Spring context test.
 
-The server runs under context path `/api` (e.g. `http://localhost:8080/api/transaction/search`). Swagger UI is enabled in the test and disabled-security profiles.
+The server runs under context path `/api` (e.g. `http://localhost:8080/api/transaction/search`). Swagger UI and `/v3/api-docs` are both toggled by `IS_SWAGGER_UI_ENABLED` (springdoc warns at startup whenever api-docs is on); keep it false in prod.
 
 ## Profiles & configuration
 
@@ -55,12 +55,13 @@ Layered, one vertical slice per domain (Account, Category, Payee, Transaction, H
 
 - Throw the checked `new MtgWalletGenericException(GenericExceptionMessages.X)` for expected errors. Each enum constant carries its message **and HTTP status**; to add an error, add a constant with both.
 - Never use 401/403 for errors caused by user input (wrong password, TOTP code): the frontend's axios interceptor treats any 401/403 as "refresh token and retry". Use 400.
+- Every expected error goes through `errorResponse(GenericExceptionMessages, ex)` (framework errors map to `INVALID_REQUEST` / `CONCURRENT_UPDATE` / `USER_NOT_FOUND`); 4xx responses carry `X-Error-Code: <constant name>` (`SecurityParams.ERROR_CODE_HEADER`, exposed via `CorsConfig`). The frontend branches on it (e.g. `NOT_VERIFIED_EMAIL`), so renaming a 4xx constant is frontend-breaking. `UsernameNotFoundException` always answers `USER_NOT_FOUND`, so throw `MtgWalletGenericException` for anything else.
 - `MtgWalletExceptionHandler` (`@ControllerAdvice`) returns a plain-string body `"An error occurred: <message>. <logId>"` and logs to `ServiceLog` (via `ServiceLogWriter`, so a DB outage can't break the response). Bean-validation errors, malformed JSON and unknown enum values (`InvalidEnumValueException`, thrown by the enums' `of()`) return 400; any other `IllegalArgumentException` is a 500 (validation errors without a `ServiceLog` row). Unexpected exceptions never expose their message.
 
 ## Security
 
 - Stateless JWT (`security/service/JwtService`, `security/filter/JwtAuthenticationFilter`). Tokens carry a `typ` claim (`access`/`refresh`); both are stored in `UserToken` (`tokenType` BEARER/REFRESH) and must match an active row of their own type, so login, refresh, logout and account deletion revoke all of a user's tokens. Whitelisted endpoints that read a bearer token (refresh, TOTP setup/enable/disable) must use `AuthenticationService.resolveUserFromBearer`, which enforces token type and revocation; `RateLimitingFilter` (Caffeine-backed, keyed by `request.getRemoteAddr()`) runs before the JWT filter. Don't read `X-Forwarded-For` directly: `server.forward-headers-strategy=native` resolves the real client IP only from trusted proxies (Render); prod reads Cloudflare's `True-Client-IP` (`application-prod.properties`), since XFF would yield a shared Cloudflare edge IP.
-- Public paths, CORS allowed origins, and the bearer prefix are constants in `security/SecurityParams` — add new unauthenticated endpoints to `AUTH_WHITELIST` there.
+- Public paths, CORS allowed origins/exposed headers, and the bearer prefix are constants in `security/SecurityParams`; the CORS bean is `security/config/CorsConfig` (shared by both security profiles) — add new unauthenticated endpoints to `AUTH_WHITELIST` there.
 - Auth flows (register, email verification, password reset, account recovery, TOTP 2FA) live in `security/api` + `security/service`; tokens for those flows are separate entities (`EmailVerificationToken`, `PasswordResetToken`, `AccountRecoveryToken`).
 - Method-level authorization uses `@PreAuthorize` (`@EnableMethodSecurity`); `AccessDeniedException` maps to 403.
 
