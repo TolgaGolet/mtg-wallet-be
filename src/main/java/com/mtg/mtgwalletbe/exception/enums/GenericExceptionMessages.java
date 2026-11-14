@@ -50,7 +50,10 @@ public enum GenericExceptionMessages {
     INVALID_TOTP_CODE("Invalid TOTP code", HttpStatus.BAD_REQUEST),
     CATEGORY_CANT_BE_ITS_OWN_PARENT("Category can't be its own parent category", HttpStatus.BAD_REQUEST),
     PARENT_CATEGORY_TRANSACTION_TYPE_MISMATCH("Parent category must have the same transaction type", HttpStatus.BAD_REQUEST),
-    CATEGORY_HAS_ACTIVE_SUBCATEGORIES("Category has subcategories. Move or delete them first", HttpStatus.CONFLICT);
+    CATEGORY_HAS_ACTIVE_SUBCATEGORIES("Category has subcategories. Move or delete them first", HttpStatus.CONFLICT),
+    // Raised by MtgWalletExceptionHandler for framework exceptions (optimistic locking, malformed request, bean validation)
+    CONCURRENT_UPDATE("The data was changed by another request. Please try again", HttpStatus.CONFLICT),
+    INVALID_REQUEST("Invalid request", HttpStatus.BAD_REQUEST);
 
     private final String message;
     // Returned by MtgWalletExceptionHandler for MtgWalletGenericException. 401/403 make the frontend refresh the token

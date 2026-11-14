@@ -5,6 +5,7 @@ import com.mtg.mtgwalletbe.entity.ServiceLog;
 import com.mtg.mtgwalletbe.exception.enums.GenericExceptionMessages;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -20,14 +21,13 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 
 import static com.mtg.mtgwalletbe.aspect.LoggableAspect.MAX_CHARS_RESPONSE;
+import static com.mtg.mtgwalletbe.security.SecurityParams.ERROR_CODE_HEADER;
 
 @ControllerAdvice
 @Slf4j
 @RequiredArgsConstructor
 public class MtgWalletExceptionHandler {
     private final ServiceLogWriter serviceLogWriter;
-    static final String CONCURRENT_UPDATE_MESSAGE = "The data was changed by another request. Please try again";
-    static final String INVALID_REQUEST_MESSAGE = "Invalid request";
     private static final String ERROR_PREFIX = "An error occurred: ";
 
     /*
@@ -41,7 +41,7 @@ public class MtgWalletExceptionHandler {
         } else {
             log.warn("An error occurred: {}", ex.getMessage());
         }
-        return errorResponse(ex.getMessage(), ex, httpStatus);
+        return errorResponse(ex.getError(), ex);
     }
 
     /*
@@ -53,7 +53,9 @@ public class MtgWalletExceptionHandler {
                 .map(MtgWalletExceptionHandler::describe)
                 .collect(Collectors.joining(", "));
         log.warn("Validation failed: {}", details);
-        return new ResponseEntity<>(ERROR_PREFIX + (details.isEmpty() ? INVALID_REQUEST_MESSAGE : details), HttpStatus.BAD_REQUEST);
+        GenericExceptionMessages error = GenericExceptionMessages.INVALID_REQUEST;
+        return new ResponseEntity<>(ERROR_PREFIX + (details.isEmpty() ? error.getMessage() : details),
+                errorCodeHeaders(error), error.getStatus());
     }
 
     private static String describe(FieldError error) {
@@ -67,13 +69,17 @@ public class MtgWalletExceptionHandler {
     @ExceptionHandler({HttpMessageNotReadableException.class, InvalidEnumValueException.class})
     public ResponseEntity<String> handleBadRequest(Exception ex) {
         log.warn("Bad request: {}", ex.getMessage());
-        return errorResponse(INVALID_REQUEST_MESSAGE, ex, HttpStatus.BAD_REQUEST);
+        return errorResponse(GenericExceptionMessages.INVALID_REQUEST, ex);
     }
 
+    /*
+     * Spring Security's "no such user". Only thrown for a missing user; other expected errors must use
+     * MtgWalletGenericException, since this handler always answers USER_NOT_FOUND.
+     */
     @ExceptionHandler(UsernameNotFoundException.class)
     public ResponseEntity<String> handleException(UsernameNotFoundException ex) {
         log.warn("User not found");
-        return errorResponse(GenericExceptionMessages.USER_NOT_FOUND.getMessage(), ex, GenericExceptionMessages.USER_NOT_FOUND.getStatus());
+        return errorResponse(GenericExceptionMessages.USER_NOT_FOUND, ex);
     }
 
     /*
@@ -82,7 +88,7 @@ public class MtgWalletExceptionHandler {
     @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
     public ResponseEntity<String> handleException(ObjectOptimisticLockingFailureException ex) {
         log.warn("Optimistic locking conflict: {}", ex.getMessage());
-        return errorResponse(CONCURRENT_UPDATE_MESSAGE, ex, HttpStatus.CONFLICT);
+        return errorResponse(GenericExceptionMessages.CONCURRENT_UPDATE, ex);
     }
 
     /*
@@ -105,10 +111,22 @@ public class MtgWalletExceptionHandler {
     }
 
     /**
-     * The body format the frontend displays: "An error occurred: <message>. <logId>"
+     * The body format the frontend displays: "An error occurred: <message>. <logId>", with the enum's status
      */
-    private ResponseEntity<String> errorResponse(String message, Exception ex, HttpStatus status) {
-        return new ResponseEntity<>(ERROR_PREFIX + message + ". " + logIdOf(logError(ex)), status);
+    private ResponseEntity<String> errorResponse(GenericExceptionMessages error, Exception ex) {
+        String body = ERROR_PREFIX + error.getMessage() + ". " + logIdOf(logError(ex));
+        return new ResponseEntity<>(body, errorCodeHeaders(error), error.getStatus());
+    }
+
+    /**
+     * X-Error-Code only for client errors (4xx): the UI branches on those, and 5xx constant names are internal.
+     */
+    private static HttpHeaders errorCodeHeaders(GenericExceptionMessages error) {
+        HttpHeaders headers = new HttpHeaders();
+        if (error.getStatus().is4xxClientError()) {
+            headers.set(ERROR_CODE_HEADER, error.name());
+        }
+        return headers;
     }
 
     private ServiceLog logError(Exception ex) {
