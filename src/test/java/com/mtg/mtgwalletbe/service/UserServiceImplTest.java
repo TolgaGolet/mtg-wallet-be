@@ -29,6 +29,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
@@ -102,6 +103,29 @@ class UserServiceImplTest {
         service.changePassword(request);
 
         assertThat(managed.getPassword()).isEqualTo("new-hash");
+    }
+
+    // Regression for F9: a password change left every existing session valid
+    @Test
+    void changePassword_revokesAllSessions() throws Exception {
+        when(passwordEncoder.matches("current", "hash")).thenReturn(true);
+        when(passwordEncoder.encode(anyString())).thenReturn("newHash");
+        UserToken access = UserToken.builder().token("a").build();
+        UserToken refresh = UserToken.builder().token("r").build();
+        when(userTokenRepository.findAllNotFullyRevokedTokensByUserId(7L)).thenReturn(List.of(access, refresh));
+
+        service.changePassword(ChangePasswordRequest.builder().currentPassword("current").newPassword("New1!pass").confirmPassword("New1!pass").build());
+
+        assertThat(List.of(access, refresh)).noneMatch(UserToken::isActive);
+    }
+
+    @Test
+    void changePassword_rejected_keepsSessions() {
+        when(passwordEncoder.matches("wrong", "hash")).thenReturn(false);
+
+        assertThatThrownBy(() -> service.changePassword(ChangePasswordRequest.builder().currentPassword("wrong").newPassword("New1!pass").confirmPassword("New1!pass").build()))
+                .isInstanceOf(MtgWalletGenericException.class);
+        verify(userTokenRepository, never()).findAllNotFullyRevokedTokensByUserId(anyLong());
     }
 
     @Test

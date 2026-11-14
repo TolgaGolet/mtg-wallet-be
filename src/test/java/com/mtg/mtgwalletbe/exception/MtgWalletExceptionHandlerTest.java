@@ -39,7 +39,8 @@ class MtgWalletExceptionHandlerTest {
         handler = new MtgWalletExceptionHandler(serviceLogWriter);
     }
 
-    // Regression for CQ-04: the status comes from the error constant, not from a message lookup
+    // Regression for CQ-04: the status comes from the error constant, not from a message lookup.
+    // F8: only server faults (5xx) persist a ServiceLog row and carry its id; client errors (4xx) end with "."
     @ParameterizedTest
     @CsvSource({
             "ACCOUNT_NOT_FOUND, NOT_FOUND",
@@ -57,7 +58,8 @@ class MtgWalletExceptionHandlerTest {
         ResponseEntity<String> response = handler.handleException(new MtgWalletGenericException(error));
 
         assertThat(response.getStatusCode()).isEqualTo(expected);
-        assertThat(response.getBody()).isEqualTo("An error occurred: " + error.getMessage() + ". 42");
+        assertThat(response.getBody()).isEqualTo("An error occurred: " + error.getMessage() + (expected.is5xxServerError() ? ". 42" : "."));
+        verify(serviceLogWriter, times(expected.is5xxServerError() ? 1 : 0)).save(any(ServiceLog.class));
         // The code is only sent for client errors; 5xx constant names stay internal
         assertThat(response.getHeaders().getFirst(ERROR_CODE_HEADER)).isEqualTo(expected.is4xxClientError() ? error.name() : null);
     }
@@ -70,7 +72,7 @@ class MtgWalletExceptionHandlerTest {
         ResponseEntity<String> response = handler.handleException(new UsernameNotFoundException(error.getMessage()));
 
         assertThat(response.getStatusCode()).isEqualTo(error.getStatus());
-        assertThat(response.getBody()).isEqualTo("An error occurred: " + error.getMessage() + ". 42");
+        assertThat(response.getBody()).isEqualTo("An error occurred: " + error.getMessage() + ".");
         assertThat(response.getHeaders().getFirst(ERROR_CODE_HEADER)).isEqualTo(error.name());
     }
 
@@ -130,8 +132,8 @@ class MtgWalletExceptionHandlerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
         assertThat(response.getBody())
-                .contains(GenericExceptionMessages.CONCURRENT_UPDATE.getMessage())
-                .endsWith("42");
+                .isEqualTo("An error occurred: " + GenericExceptionMessages.CONCURRENT_UPDATE.getMessage() + ".");
+        verifyNoInteractions(serviceLogWriter);
         assertThat(response.getHeaders().getFirst(ERROR_CODE_HEADER)).isEqualTo(GenericExceptionMessages.CONCURRENT_UPDATE.name());
     }
 
@@ -140,10 +142,61 @@ class MtgWalletExceptionHandlerTest {
     void logWriteFailure_stillReturnsOriginalError() {
         when(serviceLogWriter.save(any(ServiceLog.class))).thenReturn(null);
 
-        ResponseEntity<String> response = handler.handleException(new MtgWalletGenericException(GenericExceptionMessages.ACCOUNT_NOT_FOUND));
+        GenericExceptionMessages error = GenericExceptionMessages.DATABASE_DOWN;
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-        assertThat(response.getBody()).isEqualTo("An error occurred: Account not found. -");
+        ResponseEntity<String> response = handler.handleException(new MtgWalletGenericException(error));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+        assertThat(response.getBody()).isEqualTo("An error occurred: " + error.getMessage() + ". -");
+    }
+
+    // F2: client mistakes Spring MVC detects itself are 400 INVALID_REQUEST, not 500, and write no ServiceLog row
+    @Test
+    void badRequestParameter_returnsBadRequest() throws Exception {
+        MethodParameter parameter = new MethodParameter(Object.class.getMethod("equals", Object.class), 0);
+        var mismatch = new org.springframework.web.method.annotation.MethodArgumentTypeMismatchException("abc", Long.class, "id", parameter, null);
+
+        ResponseEntity<String> response = handler.handleBadRequest(mismatch);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getHeaders().getFirst(ERROR_CODE_HEADER)).isEqualTo(GenericExceptionMessages.INVALID_REQUEST.name());
+        verifyNoInteractions(serviceLogWriter);
+    }
+
+    @Test
+    void routingErrors_keepTheirFrameworkStatus_andWriteNoLogRow() {
+        ResponseEntity<String> notFound = handler.handleException(new org.springframework.web.servlet.resource.NoResourceFoundException(org.springframework.http.HttpMethod.GET, "/nope", "nope"));
+        ResponseEntity<String> wrongMethod = handler.handleException(new org.springframework.web.HttpRequestMethodNotSupportedException("PATCH", java.util.List.of("POST")));
+
+        assertThat(notFound.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(wrongMethod.getStatusCode()).isEqualTo(HttpStatus.METHOD_NOT_ALLOWED);
+        assertThat(wrongMethod.getHeaders().getAllow()).containsExactly(org.springframework.http.HttpMethod.POST);
+        verifyNoInteractions(serviceLogWriter);
+    }
+
+    // Regression: a framework 400 outside the hand-picked list (missing header) became a 500 with a ServiceLog row
+    @Test
+    void otherFrameworkBadRequest_isInvalidRequest() throws Exception {
+        MethodParameter parameter = new MethodParameter(Object.class.getMethod("equals", Object.class), 0);
+
+        ResponseEntity<String> response = handler.handleException(
+                new org.springframework.web.bind.MissingRequestHeaderException("X-Test", parameter));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getHeaders().getFirst(ERROR_CODE_HEADER)).isEqualTo(GenericExceptionMessages.INVALID_REQUEST.name());
+        verifyNoInteractions(serviceLogWriter);
+    }
+
+    // Regression: a 403 wrote a ServiceLog row and had no X-Error-Code, unlike every other client error
+    @Test
+    void accessDenied_isForbidden_withoutLogRow() {
+        ResponseEntity<String> response = handler.handleException(
+                new org.springframework.security.access.AccessDeniedException("nope"));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(response.getBody()).isEqualTo("An error occurred: Access denied.");
+        assertThat(response.getHeaders().getFirst(ERROR_CODE_HEADER)).isEqualTo(GenericExceptionMessages.ACCESS_DENIED.name());
+        verifyNoInteractions(serviceLogWriter);
     }
 
     @Test

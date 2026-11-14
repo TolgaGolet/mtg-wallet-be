@@ -13,10 +13,12 @@ import java.util.List;
 
 public class PayeeSpecification {
 
-    public static Specification<Payee> search(PayeeSearchRequest request, Status status) {
-        return (root, query, criteriaBuilder) -> {
+    /**
+     * Always scoped to userId via {@link UserScoped#ownedBy}.
+     */
+    public static Specification<Payee> search(PayeeSearchRequest request, Status status, Long userId) {
+        return UserScoped.<Payee>ownedBy(userId).and((root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
-
             if (request.getId() != null) {
                 predicates.add(criteriaBuilder.equal(root.get("id"), request.getId()));
             }
@@ -29,9 +31,6 @@ public class PayeeSpecification {
             if (request.getCategoryId() != null) {
                 predicates.add(criteriaBuilder.equal(root.get("category").get("id"), request.getCategoryId()));
             }
-            if (request.getUserId() != null) {
-                predicates.add(criteriaBuilder.equal(root.get("user").get("id"), request.getUserId()));
-            }
             if (request.getTransactionTypeValue() != null) {
                 predicates.add(criteriaBuilder.equal(root.get("category").get("transactionType"), TransactionType.of(request.getTransactionTypeValue())));
             }
@@ -40,6 +39,6 @@ public class PayeeSpecification {
             }
 
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
-        };
+        });
     }
 }

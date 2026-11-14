@@ -13,6 +13,7 @@ import com.mtg.mtgwalletbe.security.api.request.TotpDisableRequest;
 import com.mtg.mtgwalletbe.security.api.request.TotpVerificationRequest;
 import com.mtg.mtgwalletbe.security.api.response.AuthenticationResponse;
 import com.mtg.mtgwalletbe.security.api.response.TotpSetupResponse;
+import com.mtg.mtgwalletbe.service.UserService;
 import dev.samstevens.totp.exceptions.QrGenerationException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -28,6 +29,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import com.mtg.mtgwalletbe.service.DefaultDataService;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
@@ -47,7 +49,9 @@ public class AuthenticationService {
     private final PasswordEncoder passwordEncoder;
     private final EmailVerificationService emailVerificationService;
     private final TotpService totpService;
-    private static final Integer MAX_USER_TOKEN_COUNT = 5;
+    private final UserService userService;
+    private final DefaultDataService defaultDataService;
+    private static final int MAX_USER_TOKEN_COUNT = 5;
 
     public AuthenticationResponse register(RegisterRequest request) throws MtgWalletGenericException {
         if (walletUserRepository.findByUsername(request.getUsername()).isPresent()) {
@@ -96,6 +100,8 @@ public class AuthenticationService {
         if (Boolean.FALSE.equals(user.getIsEmailVerified())) {
             throw new MtgWalletGenericException(GenericExceptionMessages.NOT_VERIFIED_EMAIL);
         }
+        // Verification creates them; this covers accounts verified before it did (a no-op once created)
+        defaultDataService.createDefaultsFor(user);
         return user;
     }
 
@@ -113,7 +119,7 @@ public class AuthenticationService {
     private AuthenticationResponse generateTokensAndBuildResponse(WalletUser user) {
         var jwtToken = jwtService.generateToken(user);
         var refreshToken = jwtService.generateRefreshToken(user);
-        revokeAllUserTokens(user);
+        userService.revokeAllSessions(user.getId());
         saveUserToken(user, jwtToken, TokenType.BEARER);
         saveUserToken(user, refreshToken, TokenType.REFRESH);
         userTokenRepository.deleteOlderTokensOfUserByCount(user.getId(), MAX_USER_TOKEN_COUNT);
@@ -133,15 +139,6 @@ public class AuthenticationService {
                 .revoked(false)
                 .build();
         userTokenRepository.save(token);
-    }
-
-    private void revokeAllUserTokens(WalletUser user) {
-        var validUserTokens = userTokenRepository.findAllNotFullyRevokedTokensByUserId(user.getId());
-        if (validUserTokens.isEmpty()) {
-            return;
-        }
-        validUserTokens.forEach(UserToken::revoke);
-        userTokenRepository.saveAll(validUserTokens);
     }
 
     @Transactional

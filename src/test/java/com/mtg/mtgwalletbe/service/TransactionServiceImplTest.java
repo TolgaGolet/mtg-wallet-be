@@ -8,13 +8,11 @@ import com.mtg.mtgwalletbe.entity.Transaction;
 import com.mtg.mtgwalletbe.entity.WalletUser;
 import com.mtg.mtgwalletbe.enums.Currency;
 import com.mtg.mtgwalletbe.enums.TransactionType;
-import com.mtg.mtgwalletbe.mapper.AccountServiceMapper;
-import com.mtg.mtgwalletbe.mapper.PayeeServiceMapper;
 import com.mtg.mtgwalletbe.mapper.TransactionServiceMapper;
 import com.mtg.mtgwalletbe.repository.TransactionRepository;
 import com.mtg.mtgwalletbe.service.dto.AccountDto;
 import com.mtg.mtgwalletbe.service.dto.PayeeDto;
-import com.mtg.mtgwalletbe.service.dto.WalletUserBasicDto;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,11 +26,13 @@ import com.mtg.mtgwalletbe.exception.MtgWalletGenericException;
 import com.mtg.mtgwalletbe.exception.enums.GenericExceptionMessages;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.mockito.ArgumentCaptor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,13 +48,20 @@ class TransactionServiceImplTest {
 
     @Mock private TransactionRepository repository;
     @Mock private TransactionServiceMapper mapper;
-    @Mock private AccountServiceMapper accountServiceMapper;
-    @Mock private PayeeServiceMapper payeeServiceMapper;
     @Mock private PayeeService payeeService;
     @Mock private AccountService accountService;
     @Mock private UserService userService;
     @Mock private CategoryService categoryService;
+    @Mock private EntityManager entityManager;
     @InjectMocks private TransactionServiceImpl service;
+
+    /** A balance change as AccountService.adjustBalance saw it: account id and the balance right after */
+    private record BalanceChange(Long id, BigDecimal balance) {
+    }
+
+    // Every account starts at 1000; adjustBalance works on this ledger like the real service on managed rows
+    private final Map<Long, BigDecimal> balances = new HashMap<>();
+    private final List<BalanceChange> changes = new ArrayList<>();
 
     private static AccountDto account(long id) {
         return AccountDto.builder().id(id).balance(new BigDecimal("1000")).currency(Currency.TRY).build();
@@ -62,14 +69,19 @@ class TransactionServiceImplTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        WalletUserBasicDto user = new WalletUserBasicDto();
-        user.setId(1L);
-        when(userService.getCurrentLoggedInUser()).thenReturn(user);
+        when(userService.getCurrentUserId()).thenReturn(1L);
         when(payeeService.getPayee(anyLong())).thenAnswer(inv -> payee(inv.getArgument(0)));
         when(payeeService.getActivePayee(anyLong())).thenAnswer(inv -> payee(inv.getArgument(0)));
         when(accountService.getAccountById(anyLong())).thenAnswer(inv -> account(inv.getArgument(0)));
         when(accountService.getActiveAccountById(anyLong())).thenAnswer(inv -> account(inv.getArgument(0)));
-        when(accountServiceMapper.toAccountDto(any(Account.class))).thenAnswer(inv -> account(((Account) inv.getArgument(0)).getId()));
+        when(accountService.adjustBalance(anyLong(), any(BigDecimal.class))).thenAnswer(inv -> {
+            Long id = inv.getArgument(0);
+            BigDecimal updated = balances.getOrDefault(id, new BigDecimal("1000")).add(inv.getArgument(1));
+            balances.put(id, updated);
+            changes.add(new BalanceChange(id, updated));
+            return updated;
+        });
+        when(repository.save(any(Transaction.class))).thenAnswer(inv -> inv.getArgument(0));
     }
 
     private static PayeeDto payee(long id) {
@@ -142,10 +154,8 @@ class TransactionServiceImplTest {
 
     // ---- CQ-05 / CQ-12: balance effects (every account starts at 1000 in these mocks) ----
 
-    private List<AccountDto> savedBalances() throws Exception {
-        ArgumentCaptor<AccountDto> captor = ArgumentCaptor.forClass(AccountDto.class);
-        verify(accountService, atLeastOnce()).update(captor.capture());
-        return captor.getAllValues();
+    private List<BalanceChange> savedBalances() {
+        return changes;
     }
 
     private TransactionCreateRequest createRequest(String type, Long targetAccountId) {
@@ -164,20 +174,39 @@ class TransactionServiceImplTest {
     void create_appliesExpenseAndIncomeToSource(String type, String expectedBalance) throws Exception {
         service.create(createRequest(type, null));
 
-        List<AccountDto> saved = savedBalances();
+        List<BalanceChange> saved = savedBalances();
         assertThat(saved).hasSize(1);
-        assertThat(saved.get(0).getId()).isEqualTo(10L);
-        assertThat(saved.get(0).getBalance()).isEqualByComparingTo(expectedBalance);
+        assertThat(saved.get(0).id()).isEqualTo(10L);
+        assertThat(saved.get(0).balance()).isEqualByComparingTo(expectedBalance);
     }
 
     @Test
     void create_transferMovesAmountFromSourceToTarget() throws Exception {
         service.create(createRequest("TRA", 11L));
 
-        List<AccountDto> saved = savedBalances();
-        assertThat(saved).extracting(AccountDto::getId).containsExactly(10L, 11L);
-        assertThat(saved.get(0).getBalance()).isEqualByComparingTo("950");
-        assertThat(saved.get(1).getBalance()).isEqualByComparingTo("1050");
+        List<BalanceChange> saved = savedBalances();
+        assertThat(saved).extracting(BalanceChange::id).containsExactly(10L, 11L);
+        assertThat(saved.get(0).balance()).isEqualByComparingTo("950");
+        assertThat(saved.get(1).balance()).isEqualByComparingTo("1050");
+    }
+
+    // F3: the stored snapshots are the balances adjustBalance returned, and associations are references (no copies)
+    @Test
+    void create_storesBalanceSnapshotsAndReferences() throws Exception {
+        Account sourceRef = new Account();
+        Account targetRef = new Account();
+        when(entityManager.getReference(Account.class, 10L)).thenReturn(sourceRef);
+        when(entityManager.getReference(Account.class, 11L)).thenReturn(targetRef);
+        org.mockito.ArgumentCaptor<Transaction> saved = org.mockito.ArgumentCaptor.forClass(Transaction.class);
+
+        service.create(createRequest("TRA", 11L));
+
+        verify(repository).save(saved.capture());
+        assertThat(saved.getValue().getSourceAccount()).isSameAs(sourceRef);
+        assertThat(saved.getValue().getTargetAccount()).isSameAs(targetRef);
+        assertThat(saved.getValue().getSourceAccountNewBalance()).isEqualByComparingTo("950");
+        assertThat(saved.getValue().getTargetAccountNewBalance()).isEqualByComparingTo("1050");
+        verify(accountService, never()).update(any(), anyLong());
     }
 
     @Test
@@ -216,10 +245,10 @@ class TransactionServiceImplTest {
 
         service.update(updateRequest(10L, 5L), 100L); // EXPENSE 60 on account 10
 
-        List<AccountDto> saved = savedBalances();
+        List<BalanceChange> saved = savedBalances();
         assertThat(saved).hasSize(2);
-        assertThat(saved.get(0).getBalance()).isEqualByComparingTo("1050"); // rollback: +50
-        assertThat(saved.get(1).getBalance()).isEqualByComparingTo("940");  // apply: -60 on the re-read account
+        assertThat(saved.get(0).balance()).isEqualByComparingTo("1050"); // rollback: +50
+        assertThat(saved.get(1).balance()).isEqualByComparingTo("990");  // apply: -60 on top of the rollback
     }
 
     @Test
@@ -233,10 +262,10 @@ class TransactionServiceImplTest {
 
         service.delete(100L);
 
-        List<AccountDto> saved = savedBalances();
-        assertThat(saved).extracting(AccountDto::getId).containsExactly(10L, 11L);
-        assertThat(saved.get(0).getBalance()).isEqualByComparingTo("1050");
-        assertThat(saved.get(1).getBalance()).isEqualByComparingTo("950");
+        List<BalanceChange> saved = savedBalances();
+        assertThat(saved).extracting(BalanceChange::id).containsExactly(10L, 11L);
+        assertThat(saved.get(0).balance()).isEqualByComparingTo("1050");
+        assertThat(saved.get(1).balance()).isEqualByComparingTo("950");
         verify(repository).delete(transfer);
     }
 
@@ -249,9 +278,9 @@ class TransactionServiceImplTest {
 
         service.delete(100L);
 
-        List<AccountDto> saved = savedBalances();
-        assertThat(saved).extracting(AccountDto::getId).containsExactly(10L);
-        assertThat(saved.get(0).getBalance()).isEqualByComparingTo("1050");
+        List<BalanceChange> saved = savedBalances();
+        assertThat(saved).extracting(BalanceChange::id).containsExactly(10L);
+        assertThat(saved.get(0).balance()).isEqualByComparingTo("1050");
         verify(repository).delete(transfer);
     }
 }

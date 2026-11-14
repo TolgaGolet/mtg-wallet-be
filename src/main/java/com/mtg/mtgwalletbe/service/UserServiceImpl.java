@@ -123,7 +123,19 @@ public class UserServiceImpl implements UserService {
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
             throw new MtgWalletGenericException(GenericExceptionMessages.PASSWORDS_MISMATCH);
         }
-        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        replacePassword(user, request.getNewPassword());
+    }
+
+    @Override
+    public void replacePassword(WalletUser user, String rawPassword) {
+        user.setPassword(passwordEncoder.encode(rawPassword)); // managed: dirty checking saves it
+        revokeAllSessions(user.getId()); // whoever else holds a token loses it with the old password
+    }
+
+    @Override
+    public void revokeAllSessions(Long userId) {
+        // Managed rows: dirty checking saves them
+        userTokenRepository.findAllNotFullyRevokedTokensByUserId(userId).forEach(UserToken::revoke);
     }
 
     @Override
@@ -149,10 +161,9 @@ public class UserServiceImpl implements UserService {
         user.setUsername(deletedUserString);
         user.setIsEmailVerified(Boolean.FALSE);
         // No credentials survive deletion: unguessable password, no 2FA secret, every session revoked
-        user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
         user.setTotpSecret(null);
         user.setTotpEnabled(Boolean.FALSE);
-        userTokenRepository.findAllNotFullyRevokedTokensByUserId(user.getId()).forEach(UserToken::revoke);
+        replacePassword(user, UUID.randomUUID().toString());
     }
 
     @Override

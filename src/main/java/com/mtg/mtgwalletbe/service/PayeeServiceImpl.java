@@ -38,7 +38,6 @@ public class PayeeServiceImpl implements PayeeService {
     private final PayeeServiceMapper mapper;
     private final CategoryService categoryService;
     private final UserService userService;
-    private final DefaultDataService defaultDataService;
 
     @Override
     public PayeeDto create(PayeeCreateRequest payeeCreateRequest) throws MtgWalletGenericException {
@@ -59,16 +58,9 @@ public class PayeeServiceImpl implements PayeeService {
     }
 
     @Override
-    public void createDefaults() {
-        defaultDataService.createDefaultsForCurrentUser();
-    }
-
-    @Override
     @Transactional(readOnly = true)
     public Page<PayeeResponse> search(PayeeSearchRequest request, Status status, Pageable pageable) {
-        WalletUserBasicDto walletUserDto = userService.getCurrentLoggedInUser();
-        request.setUserId(walletUserDto.getId());
-        Specification<Payee> specification = PayeeSpecification.search(request, status);
+        Specification<Payee> specification = PayeeSpecification.search(request, status, userService.getCurrentUserId());
         Page<Payee> payees = repository.findAll(specification, pageable);
         return payees.map(mapper::toPayeeResponse);
     }
@@ -86,7 +78,6 @@ public class PayeeServiceImpl implements PayeeService {
     @Override
     public void delete(Long id) throws MtgWalletGenericException {
         Payee payee = owned(repository.findById(id));
-        payee.setName("Deleted Payee");
         payee.setStatus(Status.DELETED);
         repository.save(payee);
     }

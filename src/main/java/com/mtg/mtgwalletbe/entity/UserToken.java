@@ -7,7 +7,9 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
-@Data
+@Getter
+@Setter
+@ToString
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -22,6 +24,7 @@ public class UserToken extends Auditable {
     private Long id;
     @NotNull
     @Column(unique = true)
+    @ToString.Exclude // never in logs
     private String token;
     @Enumerated(EnumType.STRING)
     @Builder.Default
@@ -32,7 +35,6 @@ public class UserToken extends Auditable {
     @JoinColumn(name = "user_id")
     @JsonIgnore
     @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     private WalletUser user;
 
     /**

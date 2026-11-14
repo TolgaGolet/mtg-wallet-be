@@ -41,7 +41,21 @@ public interface UserService {
 
     void setDefaultPayeeForIncome(Payee payee);
 
+    /**
+     * Changes the password and revokes every session of the user, including the current one.
+     */
     void changePassword(ChangePasswordRequest request) throws MtgWalletGenericException;
+
+    /**
+     * Revokes all access and refresh tokens of the user (password change/reset, login, account deletion).
+     */
+    void revokeAllSessions(Long userId);
+
+    /**
+     * Sets a new password on the managed user and revokes all their sessions: every password change goes through
+     * here, so no path can keep old tokens alive.
+     */
+    void replacePassword(WalletUser user, String rawPassword);
 
     /**
      * Updates name, surname and email of the current user. A new email is marked unverified.

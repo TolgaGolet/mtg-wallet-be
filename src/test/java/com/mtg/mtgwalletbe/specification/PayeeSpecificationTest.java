@@ -23,12 +23,15 @@ class PayeeSpecificationTest {
         Path<Object> categoryIdPath = mock(Path.class);
         when(root.get("category")).thenReturn(categoryPath);
         when(categoryPath.get("id")).thenReturn(categoryIdPath);
+        Path<Object> userPath = mock(Path.class);
+        when(root.get("user")).thenReturn(userPath);
+        when(userPath.get("id")).thenReturn(mock(Path.class));
 
         PayeeSearchRequest request = new PayeeSearchRequest();
         request.setId(99L);
         request.setCategoryId(7L);
 
-        PayeeSpecification.search(request, null).toPredicate(root, query, cb);
+        PayeeSpecification.search(request, null, 1L).toPredicate(root, query, cb);
 
         verify(cb).equal(categoryIdPath, 7L);
         verify(root, never()).get("category_id");

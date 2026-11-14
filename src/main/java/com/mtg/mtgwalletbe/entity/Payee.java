@@ -8,7 +8,9 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 @Entity
-@Data
+@Getter
+@Setter
+@ToString
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(indexes = {
@@ -23,15 +25,13 @@ public class Payee extends Auditable {
     @Column(length = 50)
     private String name;
     @NotNull
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY) // search fetches it with an entity graph (PayeeRepository.findAll)
     @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     private Category category;
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
     @JsonIgnore
     @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     private WalletUser user;
     @NotNull
     @Column(length = 10)

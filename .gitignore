@@ -35,3 +35,6 @@ build/
 ### Local secrets ###
 .env
 .env.properties
+
+### Compiled classes outside target/ (e.g. an accidental decompile/debug copy) ###
+*.class

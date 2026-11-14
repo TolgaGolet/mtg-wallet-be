@@ -24,7 +24,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -43,9 +42,7 @@ public class AccountServiceImpl implements AccountService {
         WalletUserBasicDto walletUserDto = userService.getCurrentLoggedInUser();
         AccountType accountType = AccountType.of(accountCreateRequest.getTypeValue());
         Currency currency = Currency.of(accountCreateRequest.getCurrencyValue());
-        if (accountCreateRequest.getBalance() == null) {
-            accountCreateRequest.setBalance(BigDecimal.ZERO);
-        }
+        BigDecimal balance = Objects.requireNonNullElse(accountCreateRequest.getBalance(), BigDecimal.ZERO);
         if (repository.countByUserIdAndStatus(walletUserDto.getId(), Status.ACTIVE) >= MAX_ACCOUNTS) {
             throw new MtgWalletGenericException(GenericExceptionMessages.ACCOUNTS_LIMIT_EXCEEDED);
         }
@@ -53,24 +50,16 @@ public class AccountServiceImpl implements AccountService {
             throw new MtgWalletGenericException(GenericExceptionMessages.ACCOUNT_NAME_ALREADY_EXISTS);
         }
         AccountDto accountDtoToSave = AccountDto.builder().userId(walletUserDto.getId()).name(accountCreateRequest.getName()).type(accountType)
-                .balance(accountCreateRequest.getBalance()).currency(currency).status(Status.ACTIVE).build();
+                .balance(balance).currency(currency).status(Status.ACTIVE).build();
         return mapper.toAccountDto(repository.save(mapper.toAccountEntity(accountDtoToSave)));
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<AccountResponse> search(AccountSearchRequest request, Status status, Pageable pageable) {
-        WalletUserBasicDto walletUserDto = userService.getCurrentLoggedInUser();
-        request.setUserId(walletUserDto.getId());
-        Specification<Account> specification = AccountSpecification.search(request, status);
+        Specification<Account> specification = AccountSpecification.search(request, status, userService.getCurrentUserId());
         Page<Account> accounts = repository.findAll(specification, pageable);
         return accounts.map(mapper::toAccountResponse);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<AccountDto> findAllByCurrentUserByStatus(Status status) {
-        return mapper.toAccountDtoList(repository.findAllByUserIdAndStatus(userService.getCurrentUserId(), status));
     }
 
     @Override
@@ -97,16 +86,16 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public AccountDto update(AccountDto accountDto) throws MtgWalletGenericException {
-        Account account = owned(repository.findById(accountDto.getId()));
-        mapper.updateAccountFromDto(accountDto, account);
-        return mapper.toAccountDto(repository.save(account));
+    public BigDecimal adjustBalance(Long accountId, BigDecimal delta) throws MtgWalletGenericException {
+        // Any status: rolling back an old transaction may touch an account that has been deleted since
+        Account account = owned(repository.findById(accountId)); // persistence-context hit after the first load
+        account.setBalance(account.getBalance().add(delta));
+        return account.getBalance(); // dirty checking saves it; @Version turns a concurrent write into a 409
     }
 
     @Override
     public void delete(Long id) throws MtgWalletGenericException {
         Account account = owned(repository.findById(id));
-        account.setName("Deleted Account");
         account.setStatus(Status.DELETED);
         repository.save(account);
     }
@@ -114,11 +103,7 @@ public class AccountServiceImpl implements AccountService {
     @Override
     @Transactional(readOnly = true)
     public BigDecimal getTotalBalanceByCurrentUserAndCurrency(Currency currency) {
-        List<AccountDto> userAccounts = findAllByCurrentUserByStatus(Status.ACTIVE);
-        if (userAccounts.isEmpty()) {
-            return BigDecimal.ZERO;
-        }
-        return userAccounts.stream().filter(accountDto -> Objects.equals(accountDto.getCurrency(), currency)).map(AccountDto::getBalance).reduce(BigDecimal.ZERO, BigDecimal::add);
+        return repository.sumBalanceByUserIdAndStatusAndCurrency(userService.getCurrentUserId(), Status.ACTIVE, currency);
     }
 
     /**

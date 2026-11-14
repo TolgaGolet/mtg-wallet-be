@@ -10,6 +10,7 @@ import com.mtg.mtgwalletbe.enums.Status;
 import com.mtg.mtgwalletbe.exception.MtgWalletGenericException;
 import com.mtg.mtgwalletbe.mapper.CategoryServiceMapper;
 import com.mtg.mtgwalletbe.service.CategoryService;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -33,7 +34,7 @@ public class CategoryApi {
     }
 
     @PostMapping("/search")
-    public ResponseEntity<Page<CategoryResponse>> search(@RequestBody @Validated CategorySearchRequest request, @RequestParam(name = "pageNo", defaultValue = "0") int pageNo) {
+    public ResponseEntity<Page<CategoryResponse>> search(@RequestBody @Validated CategorySearchRequest request, @RequestParam(name = "pageNo", defaultValue = "0") @Min(0) int pageNo) {
         return ResponseEntity.ok(categoryService.search(request, Status.ACTIVE, PageRequest.of(pageNo, applicationConfigProperties.getDefaultPageSize(), Sort.by("name").ascending())));
     }
 

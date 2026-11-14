@@ -53,7 +53,8 @@ public enum GenericExceptionMessages {
     CATEGORY_HAS_ACTIVE_SUBCATEGORIES("Category has subcategories. Move or delete them first", HttpStatus.CONFLICT),
     // Raised by MtgWalletExceptionHandler for framework exceptions (optimistic locking, malformed request, bean validation)
     CONCURRENT_UPDATE("The data was changed by another request. Please try again", HttpStatus.CONFLICT),
-    INVALID_REQUEST("Invalid request", HttpStatus.BAD_REQUEST);
+    INVALID_REQUEST("Invalid request", HttpStatus.BAD_REQUEST),
+    ACCESS_DENIED("Access denied", HttpStatus.FORBIDDEN);
 
     private final String message;
     // Returned by MtgWalletExceptionHandler for MtgWalletGenericException. 401/403 make the frontend refresh the token

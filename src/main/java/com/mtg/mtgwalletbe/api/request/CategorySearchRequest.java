@@ -20,7 +20,6 @@ public class CategorySearchRequest {
     private String name;
     @Size(min = 1, max = 15)
     private String transactionTypeValue;
-    private Long userId;
     private Long parentCategoryId;
     private boolean childrenOnly;
 }

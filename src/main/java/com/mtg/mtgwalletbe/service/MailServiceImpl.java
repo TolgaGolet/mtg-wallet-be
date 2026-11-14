@@ -11,32 +11,54 @@ import lombok.extern.slf4j.Slf4j;
 import static com.mtg.mtgwalletbe.util.LogMasking.maskEmail;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.retry.RetryException;
+import org.springframework.core.retry.RetryPolicy;
+import org.springframework.core.retry.RetryTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+
+import java.time.Duration;
 
 @Service
 @Slf4j
 public class MailServiceImpl implements MailService {
+    /**
+     * Two retries, 1s then 4s apart: a short outage at Mailjet shouldn't lose a verification or reset email
+     */
+    static final RetryPolicy RETRY_POLICY = RetryPolicy.builder()
+            .maxRetries(2)
+            .delay(Duration.ofSeconds(1))
+            .multiplier(4)
+            .build();
+
     private final MailjetClient mailjetClient;
     private final String senderEmail;
     private final String senderName;
     private final String frontendUrl;
+    private final RetryTemplate retryTemplate;
 
+    @Autowired
     public MailServiceImpl(
             @Value("${mtgWallet.mailjet.apiKey}") String apiKey,
             @Value("${mtgWallet.mailjet.secretKey}") String secretKey,
             @Value("${mtgWallet.mailjet.senderEmail}") String senderEmail,
             @Value("${mtgWallet.mailjet.senderName}") String senderName,
             @Value("${mtgWallet.frontend.url}") String frontendUrl) {
-        this.mailjetClient = new MailjetClient(
+        this(new MailjetClient(
                 ClientOptions.builder()
                         .apiKey(apiKey)
                         .apiSecretKey(secretKey)
-                        .build());
+                        .build()), senderEmail, senderName, frontendUrl, RETRY_POLICY);
+    }
+
+    MailServiceImpl(MailjetClient mailjetClient, String senderEmail, String senderName, String frontendUrl, RetryPolicy retryPolicy) {
+        this.mailjetClient = mailjetClient;
         this.senderEmail = senderEmail;
         this.senderName = senderName;
         this.frontendUrl = frontendUrl;
+        this.retryTemplate = new RetryTemplate(retryPolicy);
     }
 
     @Override
@@ -112,37 +134,59 @@ public class MailServiceImpl implements MailService {
         sendEmail(to, subject, text, null);
     }
 
+    /**
+     * Retries per RETRY_POLICY. Throws MailDeliveryException after the last failure, so {@code @Loggable} records the
+     * call as failed (it used to be swallowed and logged as a success).
+     */
     private void sendEmail(String to, String subject, String textContent, String htmlContent) {
+        MailjetRequest request = buildRequest(to, subject, textContent, htmlContent);
         try {
-            JSONObject message = new JSONObject()
-                    .put(Emailv31.Message.FROM, new JSONObject()
-                            .put("Email", senderEmail)
-                            .put("Name", senderName))
-                    .put(Emailv31.Message.TO, new JSONArray()
-                            .put(new JSONObject()
-                                    .put("Email", to)))
-                    .put(Emailv31.Message.SUBJECT, subject);
+            retryTemplate.execute(() -> {
+                MailjetResponse response = mailjetClient.post(request);
+                if (response.getStatus() != 200) {
+                    // Not response.getData(): Mailjet's error text can quote the recipient address
+                    log.warn("Sending email '{}' to {} failed. Status: {}", subject, maskEmail(to), response.getStatus());
+                    throw new MailDeliveryException("status " + response.getStatus());
+                }
+                return response;
+            });
+            log.info("Email '{}' sent successfully to {}", subject, maskEmail(to));
+        } catch (RetryException e) {
+            Throwable last = e.getLastException();
+            String reason = last == null ? "interrupted"
+                    : last instanceof MailDeliveryException ? last.getMessage() : last.getClass().getSimpleName();
+            log.error("Giving up on email '{}' to {} after {} attempts", subject, maskEmail(to), e.getRetryCount() + 1, last);
+            throw new MailDeliveryException("Email '" + subject + "' could not be sent: " + reason);
+        }
+    }
 
-            if (textContent != null) {
-                message.put(Emailv31.Message.TEXTPART, textContent);
-            }
-            if (htmlContent != null) {
-                message.put(Emailv31.Message.HTMLPART, htmlContent);
-            }
+    private MailjetRequest buildRequest(String to, String subject, String textContent, String htmlContent) {
+        JSONObject message = new JSONObject()
+                .put(Emailv31.Message.FROM, new JSONObject()
+                        .put("Email", senderEmail)
+                        .put("Name", senderName))
+                .put(Emailv31.Message.TO, new JSONArray()
+                        .put(new JSONObject()
+                                .put("Email", to)))
+                .put(Emailv31.Message.SUBJECT, subject);
 
-            MailjetRequest request = new MailjetRequest(Emailv31.resource)
-                    .property(Emailv31.MESSAGES, new JSONArray().put(message));
+        if (textContent != null) {
+            message.put(Emailv31.Message.TEXTPART, textContent);
+        }
+        if (htmlContent != null) {
+            message.put(Emailv31.Message.HTMLPART, htmlContent);
+        }
 
-            MailjetResponse response = mailjetClient.post(request);
+        return new MailjetRequest(Emailv31.resource)
+                .property(Emailv31.MESSAGES, new JSONArray().put(message));
+    }
 
-            if (response.getStatus() != 200) {
-                log.error("Failed to send email '{}' to {}. Status: {}, Data: {}",
-                        subject, maskEmail(to), response.getStatus(), response.getData());
-            } else {
-                log.info("Email '{}' sent successfully to {}", subject, maskEmail(to));
-            }
-        } catch (Exception e) {
-            log.error("Error sending email '{}' to {}", subject, maskEmail(to), e);
+    /**
+     * Unchecked, so the @Async void methods keep their signature; @Loggable records it and the async handler logs it.
+     */
+    public static class MailDeliveryException extends RuntimeException {
+        public MailDeliveryException(String message) {
+            super(message);
         }
     }
 }

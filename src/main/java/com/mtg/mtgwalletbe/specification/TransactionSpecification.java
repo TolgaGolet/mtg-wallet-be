@@ -13,10 +13,12 @@ import java.util.List;
 
 public class TransactionSpecification {
 
-    public static Specification<Transaction> search(TransactionSearchRequest request) {
-        return (root, query, criteriaBuilder) -> {
+    /**
+     * Always scoped to userId via {@link UserScoped#ownedBy}.
+     */
+    public static Specification<Transaction> search(TransactionSearchRequest request, Long userId) {
+        return UserScoped.<Transaction>ownedBy(userId).and((root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
-
             if (request.getId() != null) {
                 predicates.add(criteriaBuilder.equal(root.get("id"), request.getId()));
             }
@@ -57,11 +59,8 @@ public class TransactionSpecification {
                         "%" + Names.normalize(request.getNotes()) + "%"
                 ));
             }
-            if (request.getUserId() != null) {
-                predicates.add(criteriaBuilder.equal(root.get("user").get("id"), request.getUserId()));
-            }
 
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
-        };
+        });
     }
 }

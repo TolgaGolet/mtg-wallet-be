@@ -10,7 +10,9 @@ import jakarta.validation.constraints.Size;
 import lombok.*;
 
 @Entity
-@Data
+@Getter
+@Setter
+@ToString
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(indexes = {
@@ -29,11 +31,10 @@ public class Category extends Auditable {
     @NotNull
     @Column(length = 10)
     private TransactionType transactionType;
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
     @JsonIgnore
     @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     private WalletUser user;
     @NotNull
     private Boolean isParent;
@@ -41,7 +42,6 @@ public class Category extends Auditable {
     @JoinColumn(name = "parent_category_id")
     @JsonIgnore
     @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     private Category parentCategory;
     @NotNull
     @Column(length = 10)

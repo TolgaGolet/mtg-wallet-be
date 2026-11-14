@@ -9,11 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface UserTokenRepository extends JpaRepository<UserToken, Long> {
-    @Query(value = """
-            select ut from UserToken ut inner join WalletUser wu\s
-            on ut.user.id = wu.id\s
-            where wu.id = :id and (ut.expired = false or ut.revoked = false)\s
-            """)
+    @Query("select ut from UserToken ut where ut.user.id = :id and (ut.expired = false or ut.revoked = false)")
     // Tokens not yet both expired and revoked, i.e. the ones a "revoke all" still has to mark
     List<UserToken> findAllNotFullyRevokedTokensByUserId(Long id);
 
