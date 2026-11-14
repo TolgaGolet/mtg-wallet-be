@@ -40,6 +40,14 @@ public class SecurityParams {
             "https://mtgwallet.onrender.com"
     ));
 
+    /**
+     * Carries the GenericExceptionMessages constant name on expected (4xx) errors, so the frontend can react to a
+     * specific error (e.g. NOT_VERIFIED_EMAIL) without matching message text. Set by MtgWalletExceptionHandler.
+     */
+    public static final String ERROR_CODE_HEADER = "X-Error-Code";
+    /** Response headers cross-origin JS may read (CorsConfig). */
+    public static final List<String> CORS_EXPOSED_HEADERS = List.of(ERROR_CODE_HEADER);
+
     private SecurityParams() {
         throw new IllegalStateException("SecurityParams class");
     }

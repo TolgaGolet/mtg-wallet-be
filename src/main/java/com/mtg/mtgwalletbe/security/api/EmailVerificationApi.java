@@ -8,7 +8,6 @@ import com.mtg.mtgwalletbe.security.service.EmailVerificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,12 +28,12 @@ public class EmailVerificationApi {
     }
 
     @PostMapping("/resend/{username}")
-    public ResponseEntity<Void> resendVerificationEmail(@PathVariable String username) {
+    public ResponseEntity<Void> resendVerificationEmail(@PathVariable String username) throws MtgWalletGenericException {
         WalletUser user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException(GenericExceptionMessages.USER_NOT_FOUND.getMessage()));
+                .orElseThrow(() -> new MtgWalletGenericException(GenericExceptionMessages.USER_NOT_FOUND));
 
         if (Boolean.TRUE.equals(user.getIsEmailVerified())) {
-            throw new UsernameNotFoundException(GenericExceptionMessages.ALREADY_VERIFIED_EMAIL.getMessage());
+            throw new MtgWalletGenericException(GenericExceptionMessages.ALREADY_VERIFIED_EMAIL);
         }
 
         emailVerificationService.createVerificationToken(user);
