@@ -1,4 +1,4 @@
-FROM eclipse-temurin:21.0.13_9-jdk-jammy AS build
+FROM eclipse-temurin:22.0.2_9-jdk-jammy AS build
 
 WORKDIR /build
 
@@ -14,7 +14,7 @@ COPY src src
 RUN ./mvnw -B clean package -DskipTests
 
 # Use the Eclipse Temurin 21 JRE image as the base for the final image
-FROM eclipse-temurin:21.0.13_9-jre-jammy
+FROM eclipse-temurin:22.0.2_9-jre-jammy
 
 WORKDIR /app
 
