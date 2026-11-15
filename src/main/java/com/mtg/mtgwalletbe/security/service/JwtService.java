@@ -68,8 +68,9 @@ public class JwtService {
     }
 
     public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
-        extraClaims.put(TOKEN_TYPE_CLAIM, ACCESS_TOKEN_TYPE);
-        return buildToken(extraClaims, userDetails, jwtAccessTokenExpirationDuration);
+        Map<String, Object> claims = new HashMap<>(extraClaims); // never change the caller's map
+        claims.put(TOKEN_TYPE_CLAIM, ACCESS_TOKEN_TYPE);
+        return buildToken(claims, userDetails, jwtAccessTokenExpirationDuration);
     }
 
     public String generateRefreshToken(UserDetails userDetails) {

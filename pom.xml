@@ -71,6 +71,13 @@
             <version>${org.mapstruct.version}</version>
             <scope>provided</scope>
         </dependency>
+        <!-- Also listed here (not only in annotationProcessorPaths), so dependency:go-offline caches it in the Docker layer -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok-mapstruct-binding</artifactId>
+            <version>${lombok-mapstruct-binding.version}</version>
+            <scope>provided</scope>
+        </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>

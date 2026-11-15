@@ -2,6 +2,8 @@ package com.mtg.mtgwalletbe.repository;
 
 import com.mtg.mtgwalletbe.entity.*;
 import com.mtg.mtgwalletbe.enums.*;
+import com.mtg.mtgwalletbe.api.request.TransactionSearchRequest;
+import com.mtg.mtgwalletbe.specification.TransactionSpecification;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -66,7 +68,7 @@ class RepositoryQueriesTest {
         return payeeRepository.save(payee);
     }
 
-    private void transaction(WalletUser owner, TransactionType type, Account source, Payee payee, String amount, LocalDateTime at) {
+    private Transaction transaction(WalletUser owner, TransactionType type, Account source, Payee payee, String amount, LocalDateTime at) {
         Transaction transaction = new Transaction();
         transaction.setUser(owner);
         transaction.setType(type);
@@ -74,8 +76,7 @@ class RepositoryQueriesTest {
         transaction.setPayee(payee);
         transaction.setAmount(new BigDecimal(amount));
         transaction.setDateTime(at);
-        transaction.setSourceAccountNewBalance(BigDecimal.ZERO);
-        transactionRepository.save(transaction);
+        return transactionRepository.save(transaction);
     }
 
     private UserToken token(WalletUser owner, String value, boolean revoked) {
@@ -150,5 +151,33 @@ class RepositoryQueriesTest {
         token(bob, "b1", false);
 
         assertThat(userTokenRepository.findAllNotFullyRevokedTokensByUserId(alice.getId())).containsExactly(active);
+    }
+
+    // LIKE wildcards in user input are matched literally: "50%" must not match "500", "a_c" must not match "abc"
+    @Test
+    void notesSearch_escapesLikeWildcards() {
+        Account cash = account(alice, "Cash", "0", Currency.TRY, Status.ACTIVE);
+        Payee payee = payee(alice, "Shop", category(alice, "Shop", TransactionType.EXPENSE), Status.ACTIVE);
+        LocalDateTime day = LocalDateTime.of(2026, 11, 10, 12, 0);
+        Transaction discount = transaction(alice, TransactionType.EXPENSE, cash, payee, "1", day);
+        discount.setNotes("Got 50% off");
+        Transaction amount = transaction(alice, TransactionType.EXPENSE, cash, payee, "1", day);
+        amount.setNotes("Paid 500 TL");
+        Transaction underscore = transaction(alice, TransactionType.EXPENSE, cash, payee, "1", day);
+        underscore.setNotes("ref a_c");
+        Transaction letters = transaction(alice, TransactionType.EXPENSE, cash, payee, "1", day);
+        letters.setNotes("ref abc");
+        entityManager.flush();
+
+        assertThat(searchNotes("50%")).containsExactly(discount.getId());
+        assertThat(searchNotes("a_c")).containsExactly(underscore.getId());
+        assertThat(searchNotes("50")).containsExactlyInAnyOrder(discount.getId(), amount.getId());
+    }
+
+    private List<Long> searchNotes(String notes) {
+        TransactionSearchRequest request = new TransactionSearchRequest();
+        request.setNotes(notes);
+        return transactionRepository.findAll(TransactionSpecification.search(request, alice.getId())).stream()
+                .map(Transaction::getId).toList();
     }
 }

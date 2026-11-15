@@ -1,8 +1,6 @@
 package com.mtg.mtgwalletbe.security;
 
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class SecurityParams {
@@ -34,11 +32,11 @@ public class SecurityParams {
             ACCOUNT_RECOVERY_PATH,
             TOTP_PATH
     };
-    public static final List<String> CORS_ALLOWED_ORIGINS = new ArrayList<>(Arrays.asList(
+    public static final List<String> CORS_ALLOWED_ORIGINS = List.of(
             "http://localhost:3000",
             "https://test-mtgwallet.onrender.com",
             "https://mtgwallet.onrender.com"
-    ));
+    );
 
     /**
      * Carries the GenericExceptionMessages constant name on expected (4xx) errors, so the frontend can react to a

@@ -17,15 +17,15 @@ import java.util.Optional;
 public interface PayeeRepository extends JpaRepository<Payee, Long>, JpaSpecificationExecutor<Payee> {
     // Search page: the response shows each payee's category, so fetch it in the same query (Payee.category is LAZY)
     @Override
-    @EntityGraph(attributePaths = {"category"})
+    @EntityGraph(attributePaths = {"category", "category.parentCategory"})
     Page<Payee> findAll(Specification<Payee> spec, Pageable pageable);
 
     // Single-payee lookups are mapped to PayeeDto, which includes the category: same single query
     @Override
-    @EntityGraph(attributePaths = {"category"})
+    @EntityGraph(attributePaths = {"category", "category.parentCategory"})
     Optional<Payee> findById(Long id);
 
-    @EntityGraph(attributePaths = {"category"})
+    @EntityGraph(attributePaths = {"category", "category.parentCategory"})
     Optional<Payee> findByIdAndStatus(Long id, Status status);
 
     long countByUserIdAndStatus(Long userId, Status status);

@@ -25,8 +25,9 @@ import static com.mtg.mtgwalletbe.service.DomainLimits.MAX_PAYEES;
  * each re-checked limits and names). Defaults whose name already exists for the user are skipped, and an existing
  * category with a default parent's name is reused as that parent.
  * <p>
- * Runs when the user verifies their email ({@code EmailVerificationService}); {@code POST /user/create-defaults}
- * stays for accounts verified before that. {@code isDefaultsCreated} makes both a no-op the second time.
+ * Runs when the user verifies their email ({@code EmailVerificationService}) and again on login
+ * ({@code AuthenticationService.authenticateUser}), for accounts verified before that. {@code isDefaultsCreated}
+ * makes it a no-op once the defaults exist.
  */
 @Service
 @RequiredArgsConstructor

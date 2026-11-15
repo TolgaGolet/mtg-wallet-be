@@ -2,11 +2,16 @@ FROM eclipse-temurin:21.0.13_9-jdk-jammy AS build
 
 WORKDIR /build
 
-# Copy the application code (includes the Maven wrapper in mvnw + .mvn/)
-COPY . .
+# Build files first: the dependency layer below is rebuilt only when pom.xml or the wrapper changes
+COPY mvnw pom.xml ./
+COPY .mvn .mvn
+RUN chmod +x mvnw && ./mvnw -B dependency:go-offline
+
+# Then the sources; a code change only reruns this layer
+COPY src src
 
 # Build with the project's Maven wrapper, so the image uses the same Maven version as local builds
-RUN chmod +x mvnw && ./mvnw -B clean package -DskipTests
+RUN ./mvnw -B clean package -DskipTests
 
 # Use the Eclipse Temurin 21 JRE image as the base for the final image
 FROM eclipse-temurin:21.0.13_9-jre-jammy
