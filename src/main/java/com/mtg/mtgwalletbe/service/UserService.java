@@ -3,6 +3,7 @@ package com.mtg.mtgwalletbe.service;
 import com.mtg.mtgwalletbe.api.request.ChangePasswordRequest;
 import com.mtg.mtgwalletbe.entity.Payee;
 import com.mtg.mtgwalletbe.entity.WalletUser;
+import com.mtg.mtgwalletbe.enums.Currency;
 import com.mtg.mtgwalletbe.exception.MtgWalletGenericException;
 import com.mtg.mtgwalletbe.service.dto.RoleDto;
 import com.mtg.mtgwalletbe.service.dto.WalletUserBasicDto;
@@ -40,6 +41,19 @@ public interface UserService {
     void setDefaultPayeeForExpense(Payee payee);
 
     void setDefaultPayeeForIncome(Payee payee);
+
+    /**
+     * The currency the Home screen shows net value in, read from the security principal (no query when the JWT filter
+     * loaded it). Null until set, or when no user is logged in (disabled-security).
+     */
+    Currency getHomeCurrency();
+
+    /**
+     * Saves the Home currency. With `clientId` and `sequence` (both or neither), a pick that is not newer than the last
+     * one saved from the same client is ignored, so a request that commits late can't undo a newer pick. A no-op when
+     * no user is logged in (disabled-security).
+     */
+    void setHomeCurrency(Currency currency, String clientId, Long sequence);
 
     /**
      * Changes the password and revokes every session of the user, including the current one.

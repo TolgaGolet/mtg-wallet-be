@@ -2,6 +2,7 @@ package com.mtg.mtgwalletbe.service;
 
 import com.mtg.mtgwalletbe.api.request.ChangePasswordRequest;
 import com.mtg.mtgwalletbe.entity.WalletUser;
+import com.mtg.mtgwalletbe.enums.Currency;
 import com.mtg.mtgwalletbe.exception.MtgWalletGenericException;
 import com.mtg.mtgwalletbe.exception.enums.GenericExceptionMessages;
 import com.mtg.mtgwalletbe.mapper.UserServiceMapper;
@@ -19,7 +20,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -54,6 +57,7 @@ class UserServiceImplTest {
         managed = WalletUser.builder().id(7L).username("alice").password("hash").name("Alice").surname("A").email("a@example.com").build();
         SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(principal, null, List.of()));
         when(walletUserRepository.findById(7L)).thenReturn(Optional.of(managed));
+        when(walletUserRepository.findByIdForUpdate(7L)).thenReturn(Optional.of(managed));
     }
 
     @AfterEach
@@ -70,6 +74,67 @@ class UserServiceImplTest {
         assertThat(service.getCurrentUserId()).isEqualTo(7L);
         assertThat(service.getCurrentLoggedInUser()).isSameAs(dto);
         verifyNoInteractions(walletUserRepository);
+    }
+
+    @Test
+    void homeCurrency_isReadFromPrincipal_andSavedOnManagedEntity() {
+        principal.setHomeCurrency(Currency.USD);
+
+        assertThat(service.getHomeCurrency()).isEqualTo(Currency.USD);
+        verifyNoInteractions(walletUserRepository);
+
+        service.setHomeCurrency(Currency.TRY, "tab-1", 3L);
+
+        assertThat(managed.getHomeCurrency()).isEqualTo(Currency.TRY);
+        assertThat(managed.getHomeCurrencyClientId()).isEqualTo("tab-1");
+        assertThat(managed.getHomeCurrencySequence()).isEqualTo(3L);
+        verify(walletUserRepository).findByIdForUpdate(7L); // locked, so the sequence check can't interleave
+        verify(walletUserRepository, never()).save(any());
+    }
+
+    @Test
+    void homeCurrency_olderPickFromSameClient_committingLate_isIgnored() {
+        service.setHomeCurrency(Currency.USD, "tab-1", 2L);
+
+        service.setHomeCurrency(Currency.EUR, "tab-1", 1L); // e.g. timed out on the client, committed after USD
+        service.setHomeCurrency(Currency.EUR, "tab-1", 2L); // same pick again (a retry)
+
+        assertThat(managed.getHomeCurrency()).isEqualTo(Currency.USD);
+        assertThat(managed.getHomeCurrencySequence()).isEqualTo(2L);
+    }
+
+    @Test
+    void homeCurrency_fromAnotherClient_orWithoutOrdering_alwaysWins() {
+        service.setHomeCurrency(Currency.USD, "tab-1", 5L);
+
+        service.setHomeCurrency(Currency.EUR, "tab-2", 1L); // another tab's counter starts over
+        assertThat(managed.getHomeCurrency()).isEqualTo(Currency.EUR);
+
+        service.setHomeCurrency(Currency.TRY, null, null);
+        assertThat(managed.getHomeCurrency()).isEqualTo(Currency.TRY);
+        assertThat(managed.getHomeCurrencyClientId()).isNull();
+        assertThat(managed.getHomeCurrencySequence()).isNull();
+    }
+
+    @Test
+    void homeCurrency_withoutLoggedInUser_isNull_notAnError() {
+        // disabled-security: the request is anonymous, GET /home/enums must still answer
+        SecurityContextHolder.getContext().setAuthentication(
+                new AnonymousAuthenticationToken("key", "anonymousUser", AuthorityUtils.createAuthorityList("ROLE_ANONYMOUS")));
+
+        assertThat(service.getHomeCurrency()).isNull();
+        // POST /home/currency must not fail either: there is just nothing to save it on
+        service.setHomeCurrency(Currency.EUR, "tab-1", 1L);
+        verifyNoInteractions(walletUserRepository);
+    }
+
+    @Test
+    void homeCurrency_withNonWalletUserPrincipal_isLoadedByUsername() {
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken("alice", null, List.of()));
+        managed.setHomeCurrency(Currency.EUR);
+        when(walletUserRepository.findByUsername("alice")).thenReturn(Optional.of(managed));
+
+        assertThat(service.getHomeCurrency()).isEqualTo(Currency.EUR);
     }
 
     @Test
@@ -152,6 +217,9 @@ class UserServiceImplTest {
     void anonymize_removesCredentialsAndRevokesSessions() {
         managed.setTotpSecret("SECRET");
         managed.setTotpEnabled(Boolean.TRUE);
+        managed.setHomeCurrency(Currency.EUR);
+        managed.setHomeCurrencyClientId("tab-1");
+        managed.setHomeCurrencySequence(4L);
         UserToken session = UserToken.builder().token("t").revoked(false).expired(false).build();
         when(userTokenRepository.findAllNotFullyRevokedTokensByUserId(7L)).thenReturn(List.of(session));
         when(passwordEncoder.encode(anyString())).thenReturn("random-hash");
@@ -163,6 +231,9 @@ class UserServiceImplTest {
         assertThat(managed.getPassword()).isEqualTo("random-hash");
         assertThat(managed.getTotpSecret()).isNull();
         assertThat(managed.getTotpEnabled()).isFalse();
+        assertThat(managed.getHomeCurrency()).isNull();
+        assertThat(managed.getHomeCurrencyClientId()).isNull();
+        assertThat(managed.getHomeCurrencySequence()).isNull();
         assertThat(session.isRevoked()).isTrue();
         assertThat(session.isExpired()).isTrue();
     }

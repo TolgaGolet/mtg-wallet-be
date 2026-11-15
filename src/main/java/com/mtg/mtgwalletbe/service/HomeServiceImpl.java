@@ -1,15 +1,19 @@
 package com.mtg.mtgwalletbe.service;
 
+import com.mtg.mtgwalletbe.annotation.Loggable;
 import com.mtg.mtgwalletbe.api.response.GetNetValueResponse;
+import com.mtg.mtgwalletbe.api.response.HomeScreenEnumResponse;
 import com.mtg.mtgwalletbe.enums.Currency;
 import com.mtg.mtgwalletbe.enums.Interval;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -17,6 +21,20 @@ import java.time.LocalDateTime;
 public class HomeServiceImpl implements HomeService {
     private final AccountService accountService;
     private final TransactionService transactionService;
+    private final UserService userService;
+
+    @Override
+    @Transactional(propagation = Propagation.SUPPORTS) // reads the principal only: no connection needed
+    public HomeScreenEnumResponse getHomeScreenEnums() {
+        return new HomeScreenEnumResponse(List.of(Currency.values()), userService.getHomeCurrency());
+    }
+
+    @Override
+    @Loggable
+    @Transactional
+    public void updateHomeCurrency(String currencyValue, String clientId, Long sequence) {
+        userService.setHomeCurrency(Currency.of(currencyValue), clientId, sequence);
+    }
 
     @Override
     public GetNetValueResponse getNetValue(String currencyValue, String intervalValue) {

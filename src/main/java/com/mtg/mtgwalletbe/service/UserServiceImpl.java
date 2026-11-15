@@ -4,6 +4,7 @@ import com.mtg.mtgwalletbe.api.request.ChangePasswordRequest;
 import com.mtg.mtgwalletbe.entity.Payee;
 import com.mtg.mtgwalletbe.entity.Role;
 import com.mtg.mtgwalletbe.entity.WalletUser;
+import com.mtg.mtgwalletbe.enums.Currency;
 import com.mtg.mtgwalletbe.exception.MtgWalletGenericException;
 import com.mtg.mtgwalletbe.exception.enums.GenericExceptionMessages;
 import com.mtg.mtgwalletbe.mapper.UserServiceMapper;
@@ -19,6 +20,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Objects;
@@ -70,12 +72,16 @@ public class UserServiceImpl implements UserService {
      * username only when the principal is something else.
      */
     private WalletUser principalOrLoad() {
+        return currentUser().orElseThrow(() -> new UsernameNotFoundException(GenericExceptionMessages.USER_NOT_FOUND.getMessage()));
+    }
+
+    /** The current user, or empty when nobody is logged in or the username no longer exists. */
+    private Optional<WalletUser> currentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.isAuthenticated() && authentication.getPrincipal() instanceof WalletUser user) {
-            return user;
+            return Optional.of(user);
         }
-        String username = getCurrentLoggedInUsername().orElseThrow(() -> new UsernameNotFoundException(GenericExceptionMessages.USER_NOT_FOUND.getMessage()));
-        return findByUsername(username);
+        return getCurrentLoggedInUsername().flatMap(walletUserRepository::findByUsername);
     }
 
     @Override
@@ -112,6 +118,32 @@ public class UserServiceImpl implements UserService {
     @Override
     public void setDefaultPayeeForIncome(Payee payee) {
         getCurrentUserEntity().setDefaultPayeeForIncome(payee);
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.SUPPORTS) // usually reads the principal only: no connection needed
+    public Currency getHomeCurrency() {
+        return currentUser()
+                .map(WalletUser::getHomeCurrency)
+                .orElse(null); // no logged-in user (disabled-security): nothing saved, not an error
+    }
+
+    @Override
+    public void setHomeCurrency(Currency currency, String clientId, Long sequence) {
+        if (getCurrentLoggedInUsername().isEmpty()) {
+            return; // no logged-in user (disabled-security): nothing to save it on, same as getHomeCurrency
+        }
+        // Locked, so two saves from one client can't both read the old sequence and the older one win
+        WalletUser user = walletUserRepository.findByIdForUpdate(getCurrentUserId())
+                .orElseThrow(() -> new UsernameNotFoundException(GenericExceptionMessages.USER_NOT_FOUND.getMessage()));
+        boolean ordered = clientId != null && sequence != null;
+        if (ordered && clientId.equals(user.getHomeCurrencyClientId()) && user.getHomeCurrencySequence() != null
+                && sequence <= user.getHomeCurrencySequence()) {
+            return; // an older pick from the same client, committing after a newer one
+        }
+        user.setHomeCurrency(currency);
+        user.setHomeCurrencyClientId(ordered ? clientId : null);
+        user.setHomeCurrencySequence(ordered ? sequence : null);
     }
 
     @Override
@@ -160,6 +192,9 @@ public class UserServiceImpl implements UserService {
         user.setSurname(deletedUserString);
         user.setUsername(deletedUserString);
         user.setIsEmailVerified(Boolean.FALSE);
+        user.setHomeCurrency(null);
+        user.setHomeCurrencyClientId(null);
+        user.setHomeCurrencySequence(null);
         // No credentials survive deletion: unguessable password, no 2FA secret, every session revoked
         user.setTotpSecret(null);
         user.setTotpEnabled(Boolean.FALSE);
