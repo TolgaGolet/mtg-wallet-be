@@ -15,7 +15,6 @@ import static com.mtg.mtgwalletbe.api.request.ValidationPatterns.NAME_REGULAR_EX
 @AllArgsConstructor
 public class AccountSearchRequest {
     private Long id;
-    private Long userId;
     @Size(min = 3, max = 50)
     @Pattern(regexp = NAME_REGULAR_EXPRESSION)
     private String name;

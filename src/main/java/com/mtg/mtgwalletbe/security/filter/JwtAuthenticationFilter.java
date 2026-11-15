@@ -4,6 +4,7 @@ import com.mtg.mtgwalletbe.enums.TokenType;
 import com.mtg.mtgwalletbe.repository.UserTokenRepository;
 import com.mtg.mtgwalletbe.security.service.JwtService;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,6 +16,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
@@ -60,10 +62,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
         final String jwt = authHeader.substring(BEARER_PREFIX.length());
-        final Claims claims = jwtService.parseClaims(jwt); // parsed once, reused below
+        final Claims claims;
+        try {
+            claims = jwtService.parseClaims(jwt); // parsed once, reused below
+        } catch (JwtException | IllegalArgumentException e) {
+            // Expired or malformed: stay anonymous and let authorization answer 401 (the frontend refreshes on it).
+            // Throwing here would escape the filter chain into the servlet error dispatch.
+            filterChain.doFilter(request, response);
+            return;
+        }
         final String username = claims.getSubject();
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
+            final UserDetails userDetails;
+            try {
+                userDetails = this.userDetailsService.loadUserByUsername(username);
+            } catch (UsernameNotFoundException e) {
+                // The user is gone (e.g. the account was deleted on another device): anonymous, so 401 as above
+                filterChain.doFilter(request, response);
+                return;
+            }
             var isTokenValid = userTokenRepository.findByToken(jwt)
                     .map(t -> t.isActiveAs(TokenType.BEARER)) // refresh tokens are stored too, but aren't access tokens
                     .orElse(false);

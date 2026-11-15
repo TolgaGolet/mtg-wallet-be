@@ -10,6 +10,7 @@ import com.mtg.mtgwalletbe.api.response.TransactionResponse;
 import com.mtg.mtgwalletbe.exception.MtgWalletGenericException;
 import com.mtg.mtgwalletbe.mapper.TransactionServiceMapper;
 import com.mtg.mtgwalletbe.service.TransactionService;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -33,8 +34,8 @@ public class TransactionApi {
     }
 
     @PostMapping("/search")
-    public ResponseEntity<Page<TransactionListResponse>> search(@RequestBody @Validated TransactionSearchRequest request, @RequestParam(name = "pageNo", defaultValue = "0") int pageNo) {
-        return ResponseEntity.ok(transactionService.search(request, PageRequest.of(pageNo, applicationConfigProperties.getDefaultPageSize(), Sort.by("dateTime").descending())).map(transactionServiceMapper::toTransactionListResponse));
+    public ResponseEntity<Page<TransactionListResponse>> search(@RequestBody @Validated TransactionSearchRequest request, @RequestParam(name = "pageNo", defaultValue = "0") @Min(0) int pageNo) {
+        return ResponseEntity.ok(transactionService.search(request, PageRequest.of(pageNo, applicationConfigProperties.getDefaultPageSize(), Sort.by("dateTime").descending().and(Sort.by("id").descending()))).map(transactionServiceMapper::toTransactionListResponse));
     }
 
     @PutMapping("/update/{id}")

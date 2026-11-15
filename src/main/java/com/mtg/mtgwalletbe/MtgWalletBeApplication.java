@@ -1,7 +1,5 @@
 package com.mtg.mtgwalletbe;
 
-import jakarta.annotation.PostConstruct;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
@@ -10,8 +8,6 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-import java.util.TimeZone;
-
 @SpringBootApplication
 @EnableJpaAuditing
 @EnableAspectJAutoProxy
@@ -19,15 +15,8 @@ import java.util.TimeZone;
 @EnableScheduling
 @ConfigurationPropertiesScan
 public class MtgWalletBeApplication {
-    @Value("${mtgWallet.applicationConfig.timeZone}")
-    private String timeZone;
-
+    // The JVM default timezone is set by config.TimeZoneInitializer (registered in META-INF/spring.factories)
     public static void main(String[] args) {
         SpringApplication.run(MtgWalletBeApplication.class, args);
-    }
-
-    @PostConstruct
-    void started() {
-        TimeZone.setDefault(TimeZone.getTimeZone(timeZone));
     }
 }

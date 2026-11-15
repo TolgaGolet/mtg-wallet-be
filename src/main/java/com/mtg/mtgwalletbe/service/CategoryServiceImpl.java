@@ -66,9 +66,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Transactional(readOnly = true)
     public Page<CategoryResponse> search(CategorySearchRequest request, Status status, Pageable pageable) {
-        WalletUserBasicDto walletUserDto = userService.getCurrentLoggedInUser();
-        request.setUserId(walletUserDto.getId());
-        Specification<Category> specification = CategorySpecification.search(request, status);
+        Specification<Category> specification = CategorySpecification.search(request, status, userService.getCurrentUserId());
         Page<Category> categories = repository.findAll(specification, pageable);
         return categories.map(mapper::toCategoryResponse);
     }
@@ -140,7 +138,6 @@ public class CategoryServiceImpl implements CategoryService {
         if (repository.existsByParentCategoryIdAndStatus(id, Status.ACTIVE)) {
             throw new MtgWalletGenericException(GenericExceptionMessages.CATEGORY_HAS_ACTIVE_SUBCATEGORIES);
         }
-        category.setName("Deleted Category");
         category.setStatus(Status.DELETED);
         repository.saveAndFlush(category);
         if (category.getParentCategory() != null) {

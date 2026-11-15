@@ -26,5 +26,4 @@ public class TransactionSearchRequest {
     private Long targetAccountId;
     @Size(min = 1, max = 50)
     private String notes;
-    private Long userId;
 }
