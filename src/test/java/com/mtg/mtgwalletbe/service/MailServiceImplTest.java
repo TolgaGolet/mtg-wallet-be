@@ -67,7 +67,7 @@ class MailServiceImplTest {
         MailjetResponse error = response(503);
         when(client.post(any(MailjetRequest.class))).thenReturn(error);
 
-        assertThatThrownBy(() -> service.sendSimple("a@example.com", "Subject", "hi"))
+        assertThatThrownBy(() -> service.send("a@example.com", "Subject", "hi"))
                 .isInstanceOf(MailServiceImpl.MailDeliveryException.class)
                 .hasMessageContaining("503")
                 .hasMessageNotContaining("a@example.com"); // no recipient in the message (it ends up in logs)

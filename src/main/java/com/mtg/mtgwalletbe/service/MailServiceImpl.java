@@ -1,5 +1,6 @@
 package com.mtg.mtgwalletbe.service;
 
+import com.mtg.mtgwalletbe.config.FrontendProperties;
 import com.mailjet.client.ClientOptions;
 import com.mailjet.client.MailjetClient;
 import com.mailjet.client.MailjetRequest;
@@ -45,12 +46,12 @@ public class MailServiceImpl implements MailService {
             @Value("${mtgWallet.mailjet.secretKey}") String secretKey,
             @Value("${mtgWallet.mailjet.senderEmail}") String senderEmail,
             @Value("${mtgWallet.mailjet.senderName}") String senderName,
-            @Value("${mtgWallet.frontend.url}") String frontendUrl) {
+            FrontendProperties frontendProperties) {
         this(new MailjetClient(
                 ClientOptions.builder()
                         .apiKey(apiKey)
                         .apiSecretKey(secretKey)
-                        .build()), senderEmail, senderName, frontendUrl, RETRY_POLICY);
+                        .build()), senderEmail, senderName, frontendProperties.url(), RETRY_POLICY);
     }
 
     MailServiceImpl(MailjetClient mailjetClient, String senderEmail, String senderName, String frontendUrl, RetryPolicy retryPolicy) {
@@ -124,22 +125,15 @@ public class MailServiceImpl implements MailService {
                 </html>
                 """.formatted(frontendUrl, subject, text);
 
-        sendEmail(to, subject, null, htmlContent);
-    }
-
-    @Override
-    @Loggable(logArgs = false, safeArgs = 1, emailArgs = 0) // logs masked recipient + subject, never the body with token links
-    @Async
-    public void sendSimple(String to, String subject, String text) {
-        sendEmail(to, subject, text, null);
+        sendEmail(to, subject, htmlContent);
     }
 
     /**
      * Retries per RETRY_POLICY. Throws MailDeliveryException after the last failure, so {@code @Loggable} records the
      * call as failed (it used to be swallowed and logged as a success).
      */
-    private void sendEmail(String to, String subject, String textContent, String htmlContent) {
-        MailjetRequest request = buildRequest(to, subject, textContent, htmlContent);
+    private void sendEmail(String to, String subject, String htmlContent) {
+        MailjetRequest request = buildRequest(to, subject, htmlContent);
         try {
             retryTemplate.execute(() -> {
                 MailjetResponse response = mailjetClient.post(request);
@@ -160,7 +154,7 @@ public class MailServiceImpl implements MailService {
         }
     }
 
-    private MailjetRequest buildRequest(String to, String subject, String textContent, String htmlContent) {
+    private MailjetRequest buildRequest(String to, String subject, String htmlContent) {
         JSONObject message = new JSONObject()
                 .put(Emailv31.Message.FROM, new JSONObject()
                         .put("Email", senderEmail)
@@ -168,14 +162,8 @@ public class MailServiceImpl implements MailService {
                 .put(Emailv31.Message.TO, new JSONArray()
                         .put(new JSONObject()
                                 .put("Email", to)))
-                .put(Emailv31.Message.SUBJECT, subject);
-
-        if (textContent != null) {
-            message.put(Emailv31.Message.TEXTPART, textContent);
-        }
-        if (htmlContent != null) {
-            message.put(Emailv31.Message.HTMLPART, htmlContent);
-        }
+                .put(Emailv31.Message.SUBJECT, subject)
+                .put(Emailv31.Message.HTMLPART, htmlContent);
 
         return new MailjetRequest(Emailv31.resource)
                 .property(Emailv31.MESSAGES, new JSONArray().put(message));

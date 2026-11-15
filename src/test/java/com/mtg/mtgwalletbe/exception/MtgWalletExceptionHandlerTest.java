@@ -51,8 +51,8 @@ class MtgWalletExceptionHandlerTest {
             "JWT_EXPIRED, UNAUTHORIZED",
             "NOT_VERIFIED_EMAIL, BAD_REQUEST",
             "CATEGORY_HAS_ACTIVE_SUBCATEGORIES, CONFLICT",
-            "DATABASE_DOWN, SERVICE_UNAVAILABLE",
-            "ROLE_NOT_FOUND, INTERNAL_SERVER_ERROR"
+            "USER_ID_CANT_BE_NULL, INTERNAL_SERVER_ERROR",
+            "ROLE_NOT_FOUND, NOT_FOUND"
     })
     void genericException_usesStatusOfErrorConstant(GenericExceptionMessages error, HttpStatus expected) {
         ResponseEntity<String> response = handler.handleException(new MtgWalletGenericException(error));
@@ -142,11 +142,11 @@ class MtgWalletExceptionHandlerTest {
     void logWriteFailure_stillReturnsOriginalError() {
         when(serviceLogWriter.save(any(ServiceLog.class))).thenReturn(null);
 
-        GenericExceptionMessages error = GenericExceptionMessages.DATABASE_DOWN;
+        GenericExceptionMessages error = GenericExceptionMessages.USER_ID_CANT_BE_NULL;
 
         ResponseEntity<String> response = handler.handleException(new MtgWalletGenericException(error));
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
         assertThat(response.getBody()).isEqualTo("An error occurred: " + error.getMessage() + ". -");
     }
 

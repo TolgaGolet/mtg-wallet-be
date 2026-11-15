@@ -3,17 +3,13 @@ package com.mtg.mtgwalletbe.enums;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.mtg.mtgwalletbe.exception.InvalidEnumValueException;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-
-import java.util.Arrays;
-import java.util.Objects;
 
 @Getter
 @AllArgsConstructor
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
-public enum TransactionType {
+public enum TransactionType implements CodedEnum {
     INCOME("INC", "Income"),
     EXPENSE("EXP", "Expense"),
     TRANSFER("TRA", "Transfer");
@@ -23,6 +19,6 @@ public enum TransactionType {
 
     @JsonCreator
     public static TransactionType of(@JsonProperty("value") String value) {
-        return Arrays.stream(TransactionType.values()).filter(item -> Objects.equals(item.getValue(), value)).findFirst().orElseThrow(() -> new InvalidEnumValueException(value));
+        return CodedEnum.fromValue(TransactionType.class, value);
     }
 }

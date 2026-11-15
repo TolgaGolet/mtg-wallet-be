@@ -19,9 +19,7 @@ import com.mtg.mtgwalletbe.specification.CategorySpecification;
 import com.mtg.mtgwalletbe.util.Names;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +29,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import static com.mtg.mtgwalletbe.service.DomainLimits.MAX_CATEGORIES;
+import static com.mtg.mtgwalletbe.service.DomainLimits.allByName;
 
 @Service
 @RequiredArgsConstructor
@@ -161,7 +160,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional(readOnly = true)
     public CategoryCreateScreenEnumResponse getCategoryCreateScreenEnums() {
         CategoryCreateScreenEnumResponse response = new CategoryCreateScreenEnumResponse();
-        Page<CategoryResponse> parentCategoriesPage = search(CategorySearchRequest.builder().childrenOnly(true).build(), Status.ACTIVE, PageRequest.of(0, MAX_CATEGORIES, Sort.by("name").ascending()));
+        Page<CategoryResponse> parentCategoriesPage = search(CategorySearchRequest.builder().childrenOnly(true).build(), Status.ACTIVE, allByName(MAX_CATEGORIES));
         List<CategorySelectResponse> parentCategories = parentCategoriesPage.getContent().stream().map(mapper::toCategorySelectResponse).toList();
         response.setParentCategoryList(parentCategories);
         return response;

@@ -1,6 +1,5 @@
 package com.mtg.mtgwalletbe.specification;
 
-import com.mtg.mtgwalletbe.util.Names;
 import com.mtg.mtgwalletbe.api.request.TransactionSearchRequest;
 import com.mtg.mtgwalletbe.entity.Transaction;
 import com.mtg.mtgwalletbe.enums.TransactionType;
@@ -29,10 +28,7 @@ public class TransactionSpecification {
                 predicates.add(criteriaBuilder.equal(root.get("payee").get("id"), request.getPayeeId()));
             }
             if (request.getPayeeName() != null) {
-                predicates.add(criteriaBuilder.like(
-                        criteriaBuilder.lower(root.get("payee").get("name")),
-                        "%" + Names.normalize(request.getPayeeName()) + "%"
-                ));
+                predicates.add(LikePatterns.contains(criteriaBuilder, root.get("payee").get("name"), request.getPayeeName()));
             }
             if (request.getAmount() != null) {
                 predicates.add(criteriaBuilder.equal(root.get("amount"), request.getAmount()));
@@ -54,10 +50,7 @@ public class TransactionSpecification {
                 predicates.add(criteriaBuilder.or(sourceOrTargetAccountPredicates.toArray(new Predicate[0])));
             }
             if (request.getNotes() != null) {
-                predicates.add(criteriaBuilder.like(
-                        criteriaBuilder.lower(root.get("notes")),
-                        "%" + Names.normalize(request.getNotes()) + "%"
-                ));
+                predicates.add(LikePatterns.contains(criteriaBuilder, root.get("notes"), request.getNotes()));
             }
 
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));

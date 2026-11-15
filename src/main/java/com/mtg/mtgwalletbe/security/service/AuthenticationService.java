@@ -19,7 +19,6 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpHeaders;
@@ -105,7 +104,6 @@ public class AuthenticationService {
         return user;
     }
 
-    @Transactional
     public AuthenticationResponse authenticate(AuthenticationRequest request) throws MtgWalletGenericException {
         WalletUser user = authenticateUser(request.getUsername(), request.getPassword());
         if (Boolean.TRUE.equals(user.getTotpEnabled())) {
@@ -141,7 +139,6 @@ public class AuthenticationService {
         userTokenRepository.save(token);
     }
 
-    @Transactional
     public TotpSetupResponse setupTotp(HttpServletRequest request) throws QrGenerationException, MtgWalletGenericException {
         var user = resolveUserFromBearer(request, TokenKind.ACCESS);
 
@@ -157,7 +154,6 @@ public class AuthenticationService {
                 .build();
     }
 
-    @Transactional
     public AuthenticationResponse verifyAndEnableTotp(HttpServletRequest request, String code) throws MtgWalletGenericException {
         var user = resolveUserFromBearer(request, TokenKind.ACCESS);
 
@@ -171,7 +167,6 @@ public class AuthenticationService {
         return generateTokensAndBuildResponse(user);
     }
 
-    @Transactional
     public AuthenticationResponse verifyTotp(TotpVerificationRequest request) throws MtgWalletGenericException {
         WalletUser user = authenticateUser(request.getUsername(), request.getPassword());
 
@@ -182,7 +177,6 @@ public class AuthenticationService {
         return generateTokensAndBuildResponse(user);
     }
 
-    @Transactional
     public void disableTotp(HttpServletRequest request, TotpDisableRequest totpDisableRequest) throws MtgWalletGenericException {
         var user = resolveUserFromBearer(request, TokenKind.ACCESS);
 
@@ -194,8 +188,7 @@ public class AuthenticationService {
         walletUserRepository.save(user);
     }
 
-    @Transactional
-    public AuthenticationResponse refreshToken(HttpServletRequest request, HttpServletResponse response) throws MtgWalletGenericException {
+    public AuthenticationResponse refreshToken(HttpServletRequest request) throws MtgWalletGenericException {
         // Rotation: the used refresh token is revoked together with every other token of the user
         return generateTokensAndBuildResponse(resolveUserFromBearer(request, TokenKind.REFRESH));
     }

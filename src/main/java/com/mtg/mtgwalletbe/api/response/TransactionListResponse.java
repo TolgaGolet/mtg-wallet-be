@@ -22,8 +22,6 @@ public class TransactionListResponse {
     private BigDecimal amount;
     private LocalDateTime dateTime;
     private AccountSummary sourceAccount;
-    private BigDecimal sourceAccountNewBalance;
-    private BigDecimal targetAccountNewBalance;
     private AccountSummary targetAccount;
     private String notes;
 

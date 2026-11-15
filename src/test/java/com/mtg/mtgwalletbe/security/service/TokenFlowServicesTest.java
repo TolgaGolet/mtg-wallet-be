@@ -1,5 +1,6 @@
 package com.mtg.mtgwalletbe.security.service;
 
+import com.mtg.mtgwalletbe.config.FrontendProperties;
 import com.mtg.mtgwalletbe.entity.AccountRecoveryToken;
 import com.mtg.mtgwalletbe.entity.EmailVerificationToken;
 import com.mtg.mtgwalletbe.entity.PasswordResetToken;
@@ -16,7 +17,6 @@ import com.mtg.mtgwalletbe.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Duration;
 import java.util.Optional;
@@ -39,10 +39,7 @@ class TokenFlowServicesTest {
         when(tokens.issue(any(), any(), any(), any())).thenReturn("tok");
     }
 
-    private static <T> T withFrontendUrl(T service) {
-        ReflectionTestUtils.setField(service, "frontendUrl", "https://app.example");
-        return service;
-    }
+    private static final FrontendProperties FRONTEND = new FrontendProperties("https://app.example");
 
     private String sentHtml(String to, String subject) {
         ArgumentCaptor<String> html = ArgumentCaptor.forClass(String.class);
@@ -56,7 +53,7 @@ class TokenFlowServicesTest {
     private final WalletUserRepository userRepository = mock(WalletUserRepository.class);
 
     private PasswordResetService passwordResetService() {
-        return withFrontendUrl(new PasswordResetService(resetRepository, userRepository, tokens, userService));
+        return new PasswordResetService(resetRepository, userRepository, tokens, userService, FRONTEND);
     }
 
     @Test
@@ -107,7 +104,7 @@ class TokenFlowServicesTest {
     private final DefaultDataService defaultDataService = mock(DefaultDataService.class);
 
     private EmailVerificationService emailVerificationService() {
-        return withFrontendUrl(new EmailVerificationService(verificationRepository, tokens, defaultDataService));
+        return new EmailVerificationService(verificationRepository, tokens, defaultDataService, FRONTEND);
     }
 
     @Test
@@ -161,7 +158,7 @@ class TokenFlowServicesTest {
     private final AuthenticationService authenticationService = mock(AuthenticationService.class);
 
     private AccountRecoveryService accountRecoveryService() {
-        return withFrontendUrl(new AccountRecoveryService(recoveryRepository, authenticationService, tokens));
+        return new AccountRecoveryService(recoveryRepository, authenticationService, tokens, FRONTEND);
     }
 
     @Test

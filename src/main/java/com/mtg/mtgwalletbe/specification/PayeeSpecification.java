@@ -1,6 +1,5 @@
 package com.mtg.mtgwalletbe.specification;
 
-import com.mtg.mtgwalletbe.util.Names;
 import com.mtg.mtgwalletbe.api.request.PayeeSearchRequest;
 import com.mtg.mtgwalletbe.entity.Payee;
 import com.mtg.mtgwalletbe.enums.Status;
@@ -23,10 +22,7 @@ public class PayeeSpecification {
                 predicates.add(criteriaBuilder.equal(root.get("id"), request.getId()));
             }
             if (request.getName() != null) {
-                predicates.add(criteriaBuilder.like(
-                        criteriaBuilder.lower(root.get("name")),
-                        "%" + Names.normalize(request.getName()) + "%"
-                ));
+                predicates.add(LikePatterns.contains(criteriaBuilder, root.get("name"), request.getName()));
             }
             if (request.getCategoryId() != null) {
                 predicates.add(criteriaBuilder.equal(root.get("category").get("id"), request.getCategoryId()));

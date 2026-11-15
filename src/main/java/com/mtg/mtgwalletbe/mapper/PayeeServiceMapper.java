@@ -6,14 +6,11 @@ import com.mtg.mtgwalletbe.service.dto.PayeeDto;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-import java.util.List;
-
-@Mapper(componentModel = "spring")
+@Mapper(config = MtgMapperConfig.class, uses = CategoryServiceMapper.class)
 public interface PayeeServiceMapper {
-    @Mapping(source = "userId", target = "user.id")
-    Payee toPayeeEntity(PayeeDto payeeDto);
-
+    // Every query whose payees are mapped fetches category.parentCategory, so the nested category costs no query
     @Mapping(source = "user.id", target = "userId")
+    @Mapping(source = "category", target = "category", qualifiedByName = CategoryServiceMapper.WITHOUT_USER)
     PayeeDto toPayeeDto(Payee payeeEntity);
 
     @Mapping(source = "category.id", target = "categoryId")
@@ -23,6 +20,4 @@ public interface PayeeServiceMapper {
     @Mapping(source = "category.id", target = "categoryId")
     @Mapping(source = "category.name", target = "categoryName")
     PayeeResponse toPayeeResponse(Payee payee);
-
-    List<PayeeDto> toPayeeDtoList(List<Payee> payeeList);
 }

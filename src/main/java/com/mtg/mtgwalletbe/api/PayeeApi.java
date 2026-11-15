@@ -13,11 +13,11 @@ import com.mtg.mtgwalletbe.service.PayeeService;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import static com.mtg.mtgwalletbe.service.DomainLimits.byName;
 
 
 @RestController
@@ -35,7 +35,7 @@ public class PayeeApi {
 
     @PostMapping("/search")
     public ResponseEntity<Page<PayeeResponse>> search(@RequestBody @Validated PayeeSearchRequest request, @RequestParam(name = "pageNo", defaultValue = "0") @Min(0) int pageNo) {
-        return ResponseEntity.ok(payeeService.search(request, Status.ACTIVE, PageRequest.of(pageNo, applicationConfigProperties.getDefaultPageSize(), Sort.by("name").ascending())));
+        return ResponseEntity.ok(payeeService.search(request, Status.ACTIVE, byName(pageNo, applicationConfigProperties.getDefaultPageSize())));
     }
 
     @PutMapping("/update/{id}")

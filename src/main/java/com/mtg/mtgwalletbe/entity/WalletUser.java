@@ -55,12 +55,14 @@ public class WalletUser extends Auditable implements UserDetails {
     @Column(length = NAME_MAX_LENGTH)
     private String name;
     @Size(max = SURNAME_MAX_LENGTH)
+    @Column(length = SURNAME_MAX_LENGTH)
     private String surname;
     @NotNull
     @ToString.Exclude // never in logs
     private String password;
     @ManyToMany(fetch = FetchType.EAGER)
     @ToString.Exclude
+    @Builder.Default // without it, WalletUser.builder() leaves roles null
     private Set<Role> roles = new HashSet<>();
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @ToString.Exclude
@@ -90,6 +92,7 @@ public class WalletUser extends Auditable implements UserDetails {
     @NotNull
     private Boolean isEmailVerified;
     @NotNull
+    @Builder.Default
     private Boolean totpEnabled = false;
     @ToString.Exclude // never in logs
     private String totpSecret;
@@ -100,8 +103,6 @@ public class WalletUser extends Auditable implements UserDetails {
     @Column(length = 36)
     private String homeCurrencyClientId;
     private Long homeCurrencySequence;
-
-    // TODO add columns and functionalities for isCredentialsNonExpired, isEnabled etc.
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

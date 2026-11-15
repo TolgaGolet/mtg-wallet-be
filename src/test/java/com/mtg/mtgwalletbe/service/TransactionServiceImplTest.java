@@ -74,13 +74,13 @@ class TransactionServiceImplTest {
         when(payeeService.getActivePayee(anyLong())).thenAnswer(inv -> payee(inv.getArgument(0)));
         when(accountService.getAccountById(anyLong())).thenAnswer(inv -> account(inv.getArgument(0)));
         when(accountService.getActiveAccountById(anyLong())).thenAnswer(inv -> account(inv.getArgument(0)));
-        when(accountService.adjustBalance(anyLong(), any(BigDecimal.class))).thenAnswer(inv -> {
+        doAnswer(inv -> {
             Long id = inv.getArgument(0);
             BigDecimal updated = balances.getOrDefault(id, new BigDecimal("1000")).add(inv.getArgument(1));
             balances.put(id, updated);
             changes.add(new BalanceChange(id, updated));
-            return updated;
-        });
+            return null;
+        }).when(accountService).adjustBalance(anyLong(), any(BigDecimal.class));
         when(repository.save(any(Transaction.class))).thenAnswer(inv -> inv.getArgument(0));
     }
 
@@ -190,9 +190,9 @@ class TransactionServiceImplTest {
         assertThat(saved.get(1).balance()).isEqualByComparingTo("1050");
     }
 
-    // F3: the stored snapshots are the balances adjustBalance returned, and associations are references (no copies)
+    // F3: associations are references (no copies)
     @Test
-    void create_storesBalanceSnapshotsAndReferences() throws Exception {
+    void create_storesReferences() throws Exception {
         Account sourceRef = new Account();
         Account targetRef = new Account();
         when(entityManager.getReference(Account.class, 10L)).thenReturn(sourceRef);
@@ -204,8 +204,6 @@ class TransactionServiceImplTest {
         verify(repository).save(saved.capture());
         assertThat(saved.getValue().getSourceAccount()).isSameAs(sourceRef);
         assertThat(saved.getValue().getTargetAccount()).isSameAs(targetRef);
-        assertThat(saved.getValue().getSourceAccountNewBalance()).isEqualByComparingTo("950");
-        assertThat(saved.getValue().getTargetAccountNewBalance()).isEqualByComparingTo("1050");
         verify(accountService, never()).update(any(), anyLong());
     }
 

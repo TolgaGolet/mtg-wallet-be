@@ -1,5 +1,6 @@
 package com.mtg.mtgwalletbe.security.service;
 
+import com.mtg.mtgwalletbe.config.FrontendProperties;
 import com.mtg.mtgwalletbe.entity.PasswordResetToken;
 import com.mtg.mtgwalletbe.exception.MtgWalletGenericException;
 import com.mtg.mtgwalletbe.exception.enums.GenericExceptionMessages;
@@ -7,7 +8,6 @@ import com.mtg.mtgwalletbe.repository.PasswordResetTokenRepository;
 import com.mtg.mtgwalletbe.repository.WalletUserRepository;
 import com.mtg.mtgwalletbe.service.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,9 +21,7 @@ public class PasswordResetService {
     private final WalletUserRepository userRepository;
     private final OneTimeTokenService oneTimeTokenService;
     private final UserService userService;
-
-    @Value("${mtgWallet.frontend.url}")
-    private String frontendUrl;
+    private final FrontendProperties frontendProperties;
 
     private static final int TOKEN_EXPIRATION_MINUTES = 15;
 
@@ -34,7 +32,7 @@ public class PasswordResetService {
         userRepository.findByEmail(email).ifPresent(user -> {
             String token = oneTimeTokenService.issue(passwordResetTokenRepository, PasswordResetToken::new,
                     user, Duration.ofMinutes(TOKEN_EXPIRATION_MINUTES));
-            String resetUrl = frontendUrl + "/reset-password/" + token;
+            String resetUrl = frontendProperties.url() + "/reset-password/" + token;
             String emailContent = String.format("""
                     <p>You have requested to reset your password. Please click the link below to proceed:</p>
                     <p><a href="%s">Reset Password</a></p>

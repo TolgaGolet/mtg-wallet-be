@@ -16,8 +16,6 @@ public class TransactionDto {
     private BigDecimal amount;
     private LocalDateTime dateTime;
     private AccountDto sourceAccount;
-    private BigDecimal sourceAccountNewBalance;
-    private BigDecimal targetAccountNewBalance;
     private AccountDto targetAccount;
     private String notes;
     private Long userId;
