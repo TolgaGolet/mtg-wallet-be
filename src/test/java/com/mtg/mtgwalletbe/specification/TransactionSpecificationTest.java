@@ -25,11 +25,14 @@ class TransactionSpecificationTest {
         CriteriaBuilder cb = mock(CriteriaBuilder.class);
         Path<Object> dateTimePath = mock(Path.class);
         when(root.get("dateTime")).thenReturn(dateTimePath);
+        Path<Object> userPath = mock(Path.class);
+        when(root.get("user")).thenReturn(userPath);
+        when(userPath.get("id")).thenReturn(mock(Path.class));
 
         TransactionSearchRequest request = new TransactionSearchRequest();
         request.setDateTime(LocalDateTime.of(2026, 11, 13, 15, 45));
 
-        TransactionSpecification.search(request).toPredicate(root, query, cb);
+        TransactionSpecification.search(request, 1L).toPredicate(root, query, cb);
 
         verify(cb).greaterThanOrEqualTo((Path) dateTimePath, LocalDateTime.of(2026, 11, 13, 0, 0));
         verify(cb).lessThan((Path) dateTimePath, LocalDateTime.of(2026, 11, 14, 0, 0));

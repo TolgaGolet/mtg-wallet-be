@@ -6,10 +6,14 @@ import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.reflect.MethodSignature;
+import org.springframework.aop.support.AopUtils;
 import org.springframework.core.Ordered;
+import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.StringJoiner;
 
@@ -27,8 +31,25 @@ public class LoggableAspect {
     public static final int MAX_CHARS_RESPONSE = 10000;
     public static final String REDACTED = "[redacted]";
 
-    @Around("@annotation(loggable)")
-    public Object logMethodCall(ProceedingJoinPoint joinPoint, Loggable loggable) throws Throwable {
+    // Matches the annotation type and reads it from the method instead of binding "@annotation(loggable)":
+    // that binding needs ExposeInvocationInterceptor to run first, so it would break at any order ahead of it.
+    @Around("@annotation(com.mtg.mtgwalletbe.annotation.Loggable)")
+    public Object aroundLoggable(ProceedingJoinPoint joinPoint) throws Throwable {
+        return logMethodCall(joinPoint, findLoggable(joinPoint));
+    }
+
+    /** The signature may name the interface method; @Loggable sits on the implementation. */
+    static Loggable findLoggable(ProceedingJoinPoint joinPoint) {
+        Method method = ((MethodSignature) joinPoint.getSignature()).getMethod();
+        Method specific = AopUtils.getMostSpecificMethod(method, AopUtils.getTargetClass(joinPoint.getTarget()));
+        Loggable loggable = AnnotationUtils.findAnnotation(specific, Loggable.class);
+        if (loggable == null) {
+            throw new IllegalStateException("@Loggable not found on " + specific);
+        }
+        return loggable;
+    }
+
+    Object logMethodCall(ProceedingJoinPoint joinPoint, Loggable loggable) throws Throwable {
         String className = joinPoint.getTarget().getClass().getName();
         String methodName = joinPoint.getSignature().getName();
         Object[] args = joinPoint.getArgs();

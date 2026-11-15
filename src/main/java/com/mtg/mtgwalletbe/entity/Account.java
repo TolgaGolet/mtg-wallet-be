@@ -13,7 +13,9 @@ import lombok.*;
 import java.math.BigDecimal;
 
 @Entity
-@Data
+@Getter
+@Setter
+@ToString
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -29,7 +31,6 @@ public class Account extends Auditable {
     @JoinColumn(name = "user_id", nullable = false)
     @JsonIgnore
     @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     private WalletUser user;
     @NotNull
     @Size(min = 3, max = 50)

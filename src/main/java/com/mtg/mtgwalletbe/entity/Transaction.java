@@ -11,7 +11,9 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Data
+@Getter
+@Setter
+@ToString
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(indexes = {
@@ -33,7 +35,6 @@ public class Transaction extends Auditable {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "payee_id", nullable = false)
     @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     private Payee payee;
     @NotNull
     private BigDecimal amount;
@@ -43,7 +44,6 @@ public class Transaction extends Auditable {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "source_account_id", nullable = false)
     @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     private Account sourceAccount;
     @NotNull
     private BigDecimal sourceAccountNewBalance;
@@ -51,7 +51,6 @@ public class Transaction extends Auditable {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "target_account_id")
     @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     private Account targetAccount;
     @Column(length = 50)
     private String notes;
@@ -59,6 +58,5 @@ public class Transaction extends Auditable {
     @JoinColumn(name = "user_id", nullable = false)
     @JsonIgnore
     @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     private WalletUser user;
 }

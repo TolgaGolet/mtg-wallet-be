@@ -9,6 +9,7 @@ import com.mtg.mtgwalletbe.enums.Status;
 import com.mtg.mtgwalletbe.exception.MtgWalletGenericException;
 import com.mtg.mtgwalletbe.mapper.AccountServiceMapper;
 import com.mtg.mtgwalletbe.service.AccountService;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -32,7 +33,7 @@ public class AccountApi {
     }
 
     @PostMapping("/search")
-    public ResponseEntity<Page<AccountResponse>> search(@RequestBody @Validated AccountSearchRequest request, @RequestParam(name = "pageNo", defaultValue = "0") int pageNo) {
+    public ResponseEntity<Page<AccountResponse>> search(@RequestBody @Validated AccountSearchRequest request, @RequestParam(name = "pageNo", defaultValue = "0") @Min(0) int pageNo) {
         return ResponseEntity.ok(accountService.search(request, Status.ACTIVE, PageRequest.of(pageNo, MAX_ACCOUNTS, Sort.by("name").ascending())));
     }
 

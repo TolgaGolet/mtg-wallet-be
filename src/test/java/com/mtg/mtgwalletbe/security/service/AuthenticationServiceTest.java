@@ -45,6 +45,8 @@ class AuthenticationServiceTest {
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private EmailVerificationService emailVerificationService;
     @Mock private TotpService totpService;
+    @Mock private com.mtg.mtgwalletbe.service.UserService userService;
+    @Mock private com.mtg.mtgwalletbe.service.DefaultDataService defaultDataService;
     @InjectMocks private AuthenticationService service;
 
     private final MockHttpServletRequest request = new MockHttpServletRequest();
@@ -180,5 +182,24 @@ class AuthenticationServiceTest {
 
         assertThatThrownBy(() -> service.refreshToken(request, new MockHttpServletResponse()))
                 .satisfies(e -> assertThat(errorOf(e)).isEqualTo(GenericExceptionMessages.JWT_EXPIRED));
+    }
+
+    // Regression: accounts verified before verification created the defaults had no way left to get them
+    @Test
+    void login_createsMissingDefaults() throws Exception {
+        user.setIsEmailVerified(Boolean.TRUE);
+
+        service.authenticateUser("alice", "secret");
+
+        verify(defaultDataService).createDefaultsFor(user);
+    }
+
+    @Test
+    void login_withUnverifiedEmail_createsNoDefaults() {
+        user.setIsEmailVerified(Boolean.FALSE);
+
+        assertThatThrownBy(() -> service.authenticateUser("alice", "secret")).isInstanceOf(MtgWalletGenericException.class);
+
+        verifyNoInteractions(defaultDataService);
     }
 }

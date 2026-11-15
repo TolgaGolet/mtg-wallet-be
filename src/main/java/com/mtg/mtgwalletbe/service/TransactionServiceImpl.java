@@ -6,18 +6,19 @@ import com.mtg.mtgwalletbe.api.response.AccountResponse;
 import com.mtg.mtgwalletbe.api.response.CategoryResponse;
 import com.mtg.mtgwalletbe.api.response.TransactionCreateScreenEnumResponse;
 import com.mtg.mtgwalletbe.entity.Account;
+import com.mtg.mtgwalletbe.entity.Payee;
 import com.mtg.mtgwalletbe.entity.Transaction;
+import com.mtg.mtgwalletbe.entity.WalletUser;
 import com.mtg.mtgwalletbe.enums.Currency;
 import com.mtg.mtgwalletbe.enums.Status;
 import com.mtg.mtgwalletbe.enums.TransactionType;
 import com.mtg.mtgwalletbe.exception.MtgWalletGenericException;
 import com.mtg.mtgwalletbe.exception.enums.GenericExceptionMessages;
-import com.mtg.mtgwalletbe.mapper.AccountServiceMapper;
-import com.mtg.mtgwalletbe.mapper.PayeeServiceMapper;
 import com.mtg.mtgwalletbe.mapper.TransactionServiceMapper;
 import com.mtg.mtgwalletbe.repository.TransactionRepository;
 import com.mtg.mtgwalletbe.service.dto.*;
 import com.mtg.mtgwalletbe.specification.TransactionSpecification;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -43,19 +44,19 @@ import static com.mtg.mtgwalletbe.service.DomainLimits.MAX_CATEGORIES;
 public class TransactionServiceImpl implements TransactionService {
     private final TransactionRepository repository;
     private final TransactionServiceMapper mapper;
-    private final AccountServiceMapper accountServiceMapper;
-    private final PayeeServiceMapper payeeServiceMapper;
     private final PayeeService payeeService;
     private final AccountService accountService;
     private final UserService userService;
     private final CategoryService categoryService;
+    // References (no query) for associations: the services above already loaded and ownership-checked these rows,
+    // so a reference resolves to the managed instance instead of a detached copy rebuilt from a DTO
+    private final EntityManager entityManager;
     private static final int APPLY = 1;
     private static final int ROLLBACK = -1;
 
     @Override
     @Loggable
     public TransactionDto create(TransactionCreateRequest transactionCreateRequest) throws MtgWalletGenericException {
-        WalletUserBasicDto walletUserDto = userService.getCurrentLoggedInUser();
         TransactionType transactionType = TransactionType.of(transactionCreateRequest.getTypeValue());
         PayeeDto payeeDto = getOrCreatePayeeDto(transactionCreateRequest.getPayeeId(), transactionCreateRequest.getPayeeName(), transactionCreateRequest.getCategoryId(), null);
         AccountDto sourceAccountDto = getAccountForTransaction(transactionCreateRequest.getSourceAccountId(), Set.of());
@@ -64,18 +65,27 @@ public class TransactionServiceImpl implements TransactionService {
                 .sourceAccountDto(sourceAccountDto)
                 .targetAccountDto(targetAccountDto)
                 .transactionType(transactionType).build());
-        applyBalanceEffect(transactionType, sourceAccountDto, targetAccountDto, transactionCreateRequest.getAmount(), APPLY);
-        TransactionDto transactionDtoToSave = TransactionDto.builder().type(transactionType)
-                .payee(payeeDto)
-                .amount(transactionCreateRequest.getAmount())
-                .dateTime(transactionCreateRequest.getDateTime())
-                .sourceAccount(sourceAccountDto)
-                .sourceAccountNewBalance(sourceAccountDto.getBalance())
-                .targetAccountNewBalance(targetAccountDto != null ? targetAccountDto.getBalance() : null)
-                .targetAccount(targetAccountDto)
-                .notes(transactionCreateRequest.getNotes())
-                .userId(walletUserDto.getId()).build();
-        return mapper.toTransactionDto(repository.save(mapper.toTransactionEntity(transactionDtoToSave)));
+        Balances balances = applyBalanceEffect(transactionType, sourceAccountDto.getId(), idOf(targetAccountDto), transactionCreateRequest.getAmount(), APPLY);
+        Transaction transaction = new Transaction();
+        transaction.setUser(entityManager.getReference(WalletUser.class, userService.getCurrentUserId()));
+        fill(transaction, transactionCreateRequest, transactionType, payeeDto, sourceAccountDto, targetAccountDto, balances);
+        return mapper.toTransactionDto(repository.save(transaction));
+    }
+
+    /**
+     * Copies the request's fields and the resolved associations onto the transaction (shared by create and update).
+     */
+    private void fill(Transaction transaction, TransactionWriteRequest request, TransactionType type, PayeeDto payee,
+                      AccountDto source, AccountDto target, Balances balances) {
+        transaction.setType(type);
+        transaction.setPayee(entityManager.getReference(Payee.class, payee.getId()));
+        transaction.setAmount(request.getAmount());
+        transaction.setDateTime(request.getDateTime());
+        transaction.setNotes(request.getNotes());
+        transaction.setSourceAccount(entityManager.getReference(Account.class, source.getId()));
+        transaction.setTargetAccount(target != null ? entityManager.getReference(Account.class, target.getId()) : null);
+        transaction.setSourceAccountNewBalance(balances.source());
+        transaction.setTargetAccountNewBalance(balances.target());
     }
 
     /**
@@ -83,7 +93,7 @@ public class TransactionServiceImpl implements TransactionService {
      * even if it was deleted since, so old transactions stay editable.
      */
     private PayeeDto getOrCreatePayeeDto(Long payeeId, String payeeName, Long categoryId, Long existingPayeeId) throws MtgWalletGenericException {
-        if (payeeId == TransactionCreateRequest.NEW_PAYEE_ID) {
+        if (payeeId == TransactionWriteRequest.NEW_PAYEE_ID) {
             return payeeService.create(PayeeCreateRequest.builder().name(payeeName).categoryId(categoryId).build());
         }
         if (Objects.equals(payeeId, existingPayeeId)) {
@@ -109,12 +119,14 @@ public class TransactionServiceImpl implements TransactionService {
         return account != null ? account.getId() : null;
     }
 
+    private static Long idOf(AccountDto account) {
+        return account != null ? account.getId() : null;
+    }
+
     @Override
     @Transactional(readOnly = true)
     public Page<TransactionDto> search(TransactionSearchRequest request, Pageable pageable) {
-        WalletUserBasicDto walletUserDto = userService.getCurrentLoggedInUser();
-        request.setUserId(walletUserDto.getId());
-        Specification<Transaction> specification = TransactionSpecification.search(request);
+        Specification<Transaction> specification = TransactionSpecification.search(request, userService.getCurrentUserId());
         Page<Transaction> transactions = repository.findAll(specification, pageable);
         return transactions.map(mapper::toTransactionDto);
     }
@@ -135,20 +147,9 @@ public class TransactionServiceImpl implements TransactionService {
                 .sourceAccountDto(sourceAccountDto)
                 .targetAccountDto(targetAccountDto)
                 .transactionType(transactionType).build());
-        applyBalanceEffect(transaction.getType(), accountServiceMapper.toAccountDto(transaction.getSourceAccount()), accountServiceMapper.toAccountDto(transaction.getTargetAccount()), transaction.getAmount(), ROLLBACK);
-        // Re-read the validated accounts once: the rollback may have changed their balances (persistence-context hit, no query)
-        AccountDto updatedSourceAccountDto = accountService.getAccountById(sourceAccountDto.getId());
-        AccountDto updatedTargetAccountDto = targetAccountDto != null ? accountService.getAccountById(targetAccountDto.getId()) : null;
-        applyBalanceEffect(transactionType, updatedSourceAccountDto, updatedTargetAccountDto, transactionUpdateRequest.getAmount(), APPLY);
-        transaction.setPayee(payeeServiceMapper.toPayeeEntity(payeeDto));
-        transaction.setType(transactionType);
-        transaction.setAmount(transactionUpdateRequest.getAmount());
-        transaction.setDateTime(transactionUpdateRequest.getDateTime());
-        transaction.setNotes(transactionUpdateRequest.getNotes());
-        transaction.setSourceAccountNewBalance(updatedSourceAccountDto.getBalance());
-        transaction.setTargetAccountNewBalance(updatedTargetAccountDto != null ? updatedTargetAccountDto.getBalance() : null);
-        transaction.setSourceAccount(accountServiceMapper.toAccountEntity(updatedSourceAccountDto));
-        transaction.setTargetAccount(accountServiceMapper.toAccountEntity(updatedTargetAccountDto));
+        applyBalanceEffect(transaction.getType(), idOf(transaction.getSourceAccount()), idOf(transaction.getTargetAccount()), transaction.getAmount(), ROLLBACK);
+        Balances balances = applyBalanceEffect(transactionType, sourceAccountDto.getId(), idOf(targetAccountDto), transactionUpdateRequest.getAmount(), APPLY);
+        fill(transaction, transactionUpdateRequest, transactionType, payeeDto, sourceAccountDto, targetAccountDto, balances);
         return mapper.toTransactionDto(repository.save(transaction));
     }
 
@@ -156,7 +157,7 @@ public class TransactionServiceImpl implements TransactionService {
     @Loggable
     public void delete(Long id) throws MtgWalletGenericException {
         Transaction transaction = ownedTransaction(id);
-        applyBalanceEffect(transaction.getType(), accountServiceMapper.toAccountDto(transaction.getSourceAccount()), accountServiceMapper.toAccountDto(transaction.getTargetAccount()), transaction.getAmount(), ROLLBACK);
+        applyBalanceEffect(transaction.getType(), idOf(transaction.getSourceAccount()), idOf(transaction.getTargetAccount()), transaction.getAmount(), ROLLBACK);
         repository.delete(transaction);
     }
 
@@ -170,10 +171,9 @@ public class TransactionServiceImpl implements TransactionService {
     @Transactional(readOnly = true)
     public BigDecimal getProfitLossByCurrentUserAndDateIntervalAndCurrency(LocalDateTime startDate, LocalDateTime endDate, Currency currency) {
         if (startDate == null || endDate == null || currency == null) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("startDate, endDate and currency are required");
         }
-        WalletUserBasicDto walletUserDto = userService.getCurrentLoggedInUser();
-        return repository.getProfitLossByUserIdAndDateIntervalAndCurrency(walletUserDto.getId(), startDate, endDate, currency, TransactionType.EXPENSE, List.of(TransactionType.EXPENSE, TransactionType.INCOME)).orElse(BigDecimal.ZERO);
+        return repository.getProfitLossByUserIdAndDateIntervalAndCurrency(userService.getCurrentUserId(), startDate, endDate, currency, TransactionType.EXPENSE, List.of(TransactionType.EXPENSE, TransactionType.INCOME)).orElse(BigDecimal.ZERO);
     }
 
     @Override
@@ -210,25 +210,26 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     /**
-     * Applies (direction = APPLY) or reverts (direction = ROLLBACK) a transaction's effect on account balances.
+     * Account balances right after a balance effect; target is null when no target account was touched.
      */
-    private void applyBalanceEffect(TransactionType type, AccountDto source, AccountDto target, BigDecimal amount, int direction) throws MtgWalletGenericException {
-        BigDecimal delta = amount.multiply(BigDecimal.valueOf(direction));
-        switch (type) {
-            case EXPENSE -> adjustBalance(source, delta.negate());
-            case INCOME -> adjustBalance(source, delta);
-            case TRANSFER -> {
-                adjustBalance(source, delta.negate());
-                // validateTransaction guarantees a target on APPLY; legacy TRANSFER rows without one roll back the source only
-                if (target != null) {
-                    adjustBalance(target, delta);
-                }
-            }
-        }
+    private record Balances(BigDecimal source, BigDecimal target) {
     }
 
-    private void adjustBalance(AccountDto account, BigDecimal delta) throws MtgWalletGenericException {
-        account.setBalance(account.getBalance().add(delta));
-        accountService.update(account);
+    /**
+     * Applies (direction = APPLY) or reverts (direction = ROLLBACK) a transaction's effect on account balances.
+     * Each change goes through AccountService.adjustBalance, so a second effect on the same account sees the first.
+     */
+    private Balances applyBalanceEffect(TransactionType type, Long sourceId, Long targetId, BigDecimal amount, int direction) throws MtgWalletGenericException {
+        BigDecimal delta = amount.multiply(BigDecimal.valueOf(direction));
+        return switch (type) {
+            case EXPENSE -> new Balances(accountService.adjustBalance(sourceId, delta.negate()), null);
+            case INCOME -> new Balances(accountService.adjustBalance(sourceId, delta), null);
+            case TRANSFER -> {
+                BigDecimal source = accountService.adjustBalance(sourceId, delta.negate());
+                // validateTransaction guarantees a target on APPLY; legacy TRANSFER rows without one roll back the source only
+                BigDecimal target = targetId != null ? accountService.adjustBalance(targetId, delta) : null;
+                yield new Balances(source, target);
+            }
+        };
     }
 }

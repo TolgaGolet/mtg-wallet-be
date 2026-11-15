@@ -5,71 +5,45 @@ import com.mtg.mtgwalletbe.entity.WalletUser;
 import com.mtg.mtgwalletbe.exception.MtgWalletGenericException;
 import com.mtg.mtgwalletbe.exception.enums.GenericExceptionMessages;
 import com.mtg.mtgwalletbe.repository.EmailVerificationTokenRepository;
-import com.mtg.mtgwalletbe.repository.WalletUserRepository;
-import com.mtg.mtgwalletbe.service.MailService;
+import com.mtg.mtgwalletbe.service.DefaultDataService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.UUID;
+import java.time.Duration;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class EmailVerificationService {
     private final EmailVerificationTokenRepository emailVerificationTokenRepository;
-    private final WalletUserRepository userRepository;
-    private final MailService mailService;
+    private final OneTimeTokenService oneTimeTokenService;
+    private final DefaultDataService defaultDataService;
     private static final int TOKEN_EXPIRATION_HOURS = 24;
 
     @Value("${mtgWallet.frontend.url}")
     private String frontendUrl;
 
     public void createVerificationToken(WalletUser user) {
-        // Delete any existing tokens
-        List<EmailVerificationToken> existingTokens = emailVerificationTokenRepository.findAllByUser(user);
-        if (!existingTokens.isEmpty()) {
-            emailVerificationTokenRepository.deleteAll(existingTokens);
-            emailVerificationTokenRepository.flush();
-        }
-
-        String token = UUID.randomUUID().toString();
-        EmailVerificationToken emailVerificationToken = EmailVerificationToken.builder()
-                .token(token)
-                .user(user)
-                .expiryDate(LocalDateTime.now().plusHours(TOKEN_EXPIRATION_HOURS))
-                .build();
-
-        emailVerificationTokenRepository.save(emailVerificationToken);
-        sendVerificationEmail(user.getEmail(), token);
-    }
-
-    private void sendVerificationEmail(String email, String token) {
+        String token = oneTimeTokenService.issue(emailVerificationTokenRepository, EmailVerificationToken::new,
+                user, Duration.ofHours(TOKEN_EXPIRATION_HOURS));
         String verificationUrl = frontendUrl + "/verify-email/" + token;
         String emailContent = String.format("""
                 <p>Please click the link below to verify your email address:</p>
                 <p><a href="%s">Verify Email</a></p>
                 <p>This link will expire in %d hours.</p>
                 """, verificationUrl, TOKEN_EXPIRATION_HOURS);
-
-        mailService.send(email, "Verify Your Email Address", emailContent);
+        oneTimeTokenService.sendAfterCommit(user.getEmail(), "Verify Your Email Address", emailContent);
     }
 
     public void verifyEmail(String token) throws MtgWalletGenericException {
-        EmailVerificationToken emailVerificationToken = emailVerificationTokenRepository.findByToken(token)
-                .orElseThrow(() -> new MtgWalletGenericException(GenericExceptionMessages.INVALID_EMAIL_VERIFICATION_TOKEN));
-
-        if (emailVerificationToken.isExpired()) {
-            throw new MtgWalletGenericException(GenericExceptionMessages.EXPIRED_EMAIL_VERIFICATION_TOKEN);
-        }
-
-        WalletUser user = emailVerificationToken.getUser();
-        user.setIsEmailVerified(Boolean.TRUE);
-
-        userRepository.save(user);
-        emailVerificationTokenRepository.delete(emailVerificationToken);
+        EmailVerificationToken verificationToken = oneTimeTokenService.consume(emailVerificationTokenRepository, token,
+                GenericExceptionMessages.INVALID_EMAIL_VERIFICATION_TOKEN, GenericExceptionMessages.EXPIRED_EMAIL_VERIFICATION_TOKEN);
+        WalletUser user = verificationToken.getUser();
+        user.setIsEmailVerified(Boolean.TRUE); // managed: dirty checking saves it
+        // A new user's starter categories and payees, in the same transaction (a no-op once created,
+        // e.g. when a changed email is verified again)
+        defaultDataService.createDefaultsFor(user);
     }
 }

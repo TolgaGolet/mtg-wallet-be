@@ -24,6 +24,9 @@ import static com.mtg.mtgwalletbe.service.DomainLimits.MAX_PAYEES;
  * Creates the starter categories and payees for a new user in two batched inserts (instead of ~55 service calls that
  * each re-checked limits and names). Defaults whose name already exists for the user are skipped, and an existing
  * category with a default parent's name is reused as that parent.
+ * <p>
+ * Runs when the user verifies their email ({@code EmailVerificationService}); {@code POST /user/create-defaults}
+ * stays for accounts verified before that. {@code isDefaultsCreated} makes both a no-op the second time.
  */
 @Service
 @RequiredArgsConstructor
@@ -31,7 +34,6 @@ import static com.mtg.mtgwalletbe.service.DomainLimits.MAX_PAYEES;
 public class DefaultDataService {
     private final CategoryRepository categoryRepository;
     private final PayeeRepository payeeRepository;
-    private final UserService userService;
 
     record DefaultCategory(String name, TransactionType type, String parent) {
     }
@@ -81,8 +83,8 @@ public class DefaultDataService {
         return new DefaultCategory(name, type, parent);
     }
 
-    public void createDefaultsForCurrentUser() {
-        WalletUser user = userService.getCurrentUserEntity();
+    /** {@code user} must be a managed entity: its {@code isDefaultsCreated} flag is saved by dirty checking. */
+    public void createDefaultsFor(WalletUser user) {
         if (Boolean.TRUE.equals(user.getIsDefaultsCreated())) {
             return;
         }

@@ -1,7 +1,10 @@
 package com.mtg.mtgwalletbe.service;
 
 import com.mtg.mtgwalletbe.api.response.GetNetValueResponse;
+import com.mtg.mtgwalletbe.api.response.HomeScreenEnumResponse;
 import com.mtg.mtgwalletbe.enums.Currency;
+import com.mtg.mtgwalletbe.exception.InvalidEnumValueException;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -15,9 +18,11 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 // CQ-05: profit/loss percentage edge cases (patched by hand in e30f519)
@@ -26,7 +31,36 @@ class HomeServiceImplTest {
 
     @Mock private AccountService accountService;
     @Mock private TransactionService transactionService;
+    @Mock private UserService userService;
     @InjectMocks private HomeServiceImpl service;
+
+    @Test
+    void getHomeScreenEnums_returnsSavedCurrency_andCurrenciesInDeclaredOrder() {
+        when(userService.getHomeCurrency()).thenReturn(Currency.TRY);
+
+        HomeScreenEnumResponse response = service.getHomeScreenEnums();
+
+        assertThat(response.getSelectedCurrency()).isEqualTo(Currency.TRY);
+        assertThat(response.getCurrencies()).containsExactly(Currency.values());
+    }
+
+    @Test
+    void getHomeScreenEnums_withoutSavedCurrency_returnsNullSelection() {
+        assertThat(service.getHomeScreenEnums().getSelectedCurrency()).isNull();
+    }
+
+    @Test
+    void updateHomeCurrency_savesTheResolvedCurrency() {
+        service.updateHomeCurrency("TRY", "tab-1", 3L);
+
+        verify(userService).setHomeCurrency(Currency.TRY, "tab-1", 3L);
+    }
+
+    @Test
+    void updateHomeCurrency_unknownValue_isRejected() {
+        assertThatThrownBy(() -> service.updateHomeCurrency("XXX", null, null)).isInstanceOf(InvalidEnumValueException.class);
+        verifyNoInteractions(userService);
+    }
 
     @ParameterizedTest(name = "net={0}, P/L={1} -> {2}%")
     @CsvSource({

@@ -12,22 +12,23 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 public interface AccountService {
     AccountDto create(AccountCreateRequest accountDto) throws MtgWalletGenericException;
 
     Page<AccountResponse> search(AccountSearchRequest request, Status status, Pageable pageable);
 
-    public List<AccountDto> findAllByCurrentUserByStatus(Status status);
-
-    public AccountDto getAccountById(Long id) throws MtgWalletGenericException;
+    AccountDto getAccountById(Long id) throws MtgWalletGenericException;
 
     AccountDto getActiveAccountById(Long id) throws MtgWalletGenericException;
 
     AccountDto update(AccountUpdateRequest accountUpdateRequest, Long id) throws MtgWalletGenericException;
 
-    AccountDto update(AccountDto accountDto) throws MtgWalletGenericException;
+    /**
+     * Adds delta (negative to subtract) to the balance of an account the current user owns. The only way balances
+     * change after creation; returns the new balance.
+     */
+    BigDecimal adjustBalance(Long accountId, BigDecimal delta) throws MtgWalletGenericException;
 
     void delete(Long id) throws MtgWalletGenericException;
 

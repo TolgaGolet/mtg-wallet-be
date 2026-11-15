@@ -2,10 +2,13 @@ package com.mtg.mtgwalletbe.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.mtg.mtgwalletbe.entity.auditing.Auditable;
+import com.mtg.mtgwalletbe.enums.Currency;
+import com.mtg.mtgwalletbe.enums.converter.LenientCurrencyConverter;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
+import org.hibernate.annotations.DynamicUpdate;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -14,15 +17,15 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-@Data
+@Getter
+@Setter
+@ToString
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity
-@Table(indexes = {
-        @Index(columnList = "username"),
-        @Index(columnList = "email")
-})
+@Entity // username and email need no extra @Index: their unique constraints already create one
+// Intent-based changes (currency, password, profile) write only their own columns, so concurrent ones don't undo each other
+@DynamicUpdate
 public class WalletUser extends Auditable implements UserDetails {
     public static final int USERNAME_MIN_LENGTH = 3;
     public static final int USERNAME_MAX_LENGTH = 15;
@@ -48,45 +51,39 @@ public class WalletUser extends Auditable implements UserDetails {
     @Column(unique = true, length = EMAIL_MAX_LENGTH)
     private String email;
     @NotNull
-    @Size(min = NAME_MIN_LENGTH, max = SURNAME_MAX_LENGTH)
-    @Column(length = SURNAME_MAX_LENGTH)
+    @Size(min = NAME_MIN_LENGTH, max = NAME_MAX_LENGTH)
+    @Column(length = NAME_MAX_LENGTH)
     private String name;
     @Size(max = SURNAME_MAX_LENGTH)
     private String surname;
     @NotNull
+    @ToString.Exclude // never in logs
     private String password;
     @ManyToMany(fetch = FetchType.EAGER)
     @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     private Set<Role> roles = new HashSet<>();
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     private List<UserToken> userTokens;
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     private List<Account> accounts;
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     private List<Payee> payees;
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     private List<Category> categories;
     // LAZY: never read in a request, so the JWT filter's per-request user load doesn't join these
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "default_payee_id_for_expense")
     @JsonIgnore
     @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     private Payee defaultPayeeForExpense;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "default_payee_id_for_income")
     @JsonIgnore
     @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     private Payee defaultPayeeForIncome;
     @NotNull
     private Boolean isDefaultsCreated;
@@ -94,7 +91,15 @@ public class WalletUser extends Auditable implements UserDetails {
     private Boolean isEmailVerified;
     @NotNull
     private Boolean totpEnabled = false;
+    @ToString.Exclude // never in logs
     private String totpSecret;
+    @Column(length = 10)
+    @Convert(converter = LenientCurrencyConverter.class) // a stale value must not break the per-request user load
+    private Currency homeCurrency; // null until the user picks one
+    // Which client (tab) saved homeCurrency and its pick counter, so a late-committing older pick is ignored
+    @Column(length = 36)
+    private String homeCurrencyClientId;
+    private Long homeCurrencySequence;
 
     // TODO add columns and functionalities for isCredentialsNonExpired, isEnabled etc.
 

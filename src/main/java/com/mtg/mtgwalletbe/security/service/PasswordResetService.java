@@ -1,84 +1,53 @@
 package com.mtg.mtgwalletbe.security.service;
 
 import com.mtg.mtgwalletbe.entity.PasswordResetToken;
-import com.mtg.mtgwalletbe.entity.WalletUser;
 import com.mtg.mtgwalletbe.exception.MtgWalletGenericException;
 import com.mtg.mtgwalletbe.exception.enums.GenericExceptionMessages;
 import com.mtg.mtgwalletbe.repository.PasswordResetTokenRepository;
 import com.mtg.mtgwalletbe.repository.WalletUserRepository;
-import com.mtg.mtgwalletbe.service.MailService;
+import com.mtg.mtgwalletbe.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.Optional;
-import java.util.UUID;
+import java.time.Duration;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class PasswordResetService {
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final WalletUserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final MailService mailService;
+    private final OneTimeTokenService oneTimeTokenService;
+    private final UserService userService;
 
     @Value("${mtgWallet.frontend.url}")
     private String frontendUrl;
 
     private static final int TOKEN_EXPIRATION_MINUTES = 15;
 
-    @Transactional
+    /**
+     * Silent for unknown emails, so the endpoint doesn't reveal which addresses are registered.
+     */
     public void initiatePasswordReset(String email) {
-        Optional<WalletUser> user = userRepository.findByEmail(email);
-        if (user.isPresent()) {
-            passwordResetTokenRepository.findByUser(user.get()).ifPresent(passwordResetTokenRepository::delete);
-            passwordResetTokenRepository.flush();
-            String token = UUID.randomUUID().toString();
-            PasswordResetToken resetToken = PasswordResetToken.builder()
-                    .token(token)
-                    .user(user.get())
-                    .expiryDate(LocalDateTime.now().plusMinutes(TOKEN_EXPIRATION_MINUTES))
-                    .build();
-
-            passwordResetTokenRepository.save(resetToken);
-            sendPasswordResetEmail(email, token);
-        }
+        userRepository.findByEmail(email).ifPresent(user -> {
+            String token = oneTimeTokenService.issue(passwordResetTokenRepository, PasswordResetToken::new,
+                    user, Duration.ofMinutes(TOKEN_EXPIRATION_MINUTES));
+            String resetUrl = frontendUrl + "/reset-password/" + token;
+            String emailContent = String.format("""
+                    <p>You have requested to reset your password. Please click the link below to proceed:</p>
+                    <p><a href="%s">Reset Password</a></p>
+                    <p>This link will expire in %d minutes.</p>
+                    <p>If you did not request this password reset, please ignore this email.</p>
+                    """, resetUrl, TOKEN_EXPIRATION_MINUTES);
+            oneTimeTokenService.sendAfterCommit(email, "Password Reset Request", emailContent);
+        });
     }
 
-    private void sendPasswordResetEmail(String email, String token) {
-        String resetUrl = frontendUrl + "/reset-password/" + token;
-        String emailContent = String.format("""
-                <p>You have requested to reset your password. Please click the link below to proceed:</p>
-                <p><a href="%s">Reset Password</a></p>
-                <p>This link will expire in %d minutes.</p>
-                <p>If you did not request this password reset, please ignore this email.</p>
-                """, resetUrl, TOKEN_EXPIRATION_MINUTES);
-
-        mailService.send(email, "Password Reset Request", emailContent);
-    }
-
-    @Transactional
     public void resetPassword(String token, String newPassword) throws MtgWalletGenericException {
-        PasswordResetToken resetToken = validateAndGetToken(token);
-
-        WalletUser user = resetToken.getUser();
-        user.setPassword(passwordEncoder.encode(newPassword));
-        userRepository.save(user);
-
-        passwordResetTokenRepository.delete(resetToken);
-    }
-
-    private PasswordResetToken validateAndGetToken(String token) throws MtgWalletGenericException {
-        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token)
-                .orElseThrow(() -> new MtgWalletGenericException(GenericExceptionMessages.INVALID_PASSWORD_RESET_TOKEN));
-
-        if (resetToken.isExpired()) {
-            throw new MtgWalletGenericException(GenericExceptionMessages.EXPIRED_PASSWORD_RESET_TOKEN);
-        }
-
-        return resetToken;
+        PasswordResetToken resetToken = oneTimeTokenService.consume(passwordResetTokenRepository, token,
+                GenericExceptionMessages.INVALID_PASSWORD_RESET_TOKEN, GenericExceptionMessages.EXPIRED_PASSWORD_RESET_TOKEN);
+        userService.replacePassword(resetToken.getUser(), newPassword); // someone else may be logged in
     }
 }

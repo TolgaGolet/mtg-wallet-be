@@ -32,7 +32,6 @@ class DefaultDataServiceTest {
 
     @Mock private CategoryRepository categoryRepository;
     @Mock private PayeeRepository payeeRepository;
-    @Mock private UserService userService;
     @InjectMocks private DefaultDataService service;
 
     private WalletUser user;
@@ -40,7 +39,6 @@ class DefaultDataServiceTest {
     @BeforeEach
     void setUp() {
         user = WalletUser.builder().id(1L).isDefaultsCreated(Boolean.FALSE).build();
-        when(userService.getCurrentUserEntity()).thenReturn(user);
         when(categoryRepository.findAllByUserIdAndStatus(1L, Status.ACTIVE)).thenReturn(List.of());
         when(payeeRepository.findNamesByUserIdAndStatus(1L, Status.ACTIVE, -1L)).thenReturn(List.of());
     }
@@ -65,7 +63,7 @@ class DefaultDataServiceTest {
 
     @Test
     void createsAllDefaultsInOneBatchPerTable_withHierarchy() {
-        service.createDefaultsForCurrentUser();
+        service.createDefaultsFor(user);
 
         List<Category> categories = savedCategories();
         assertThat(categories).hasSize(DefaultDataService.CATEGORIES.size());
@@ -96,7 +94,7 @@ class DefaultDataServiceTest {
         when(categoryRepository.findAllByUserIdAndStatus(1L, Status.ACTIVE)).thenReturn(new ArrayList<>(List.of(existingAuto)));
         when(payeeRepository.findNamesByUserIdAndStatus(1L, Status.ACTIVE, -1L)).thenReturn(List.of("SHELL"));
 
-        service.createDefaultsForCurrentUser();
+        service.createDefaultsFor(user);
 
         List<Category> categories = savedCategories();
         assertThat(categories).hasSize(DefaultDataService.CATEGORIES.size() - 1);
@@ -122,7 +120,7 @@ class DefaultDataServiceTest {
         when(categoryRepository.findAllByUserIdAndStatus(1L, Status.ACTIVE)).thenReturn(existing);
         when(payeeRepository.findNamesByUserIdAndStatus(1L, Status.ACTIVE, -1L)).thenReturn(existingPayees);
 
-        service.createDefaultsForCurrentUser();
+        service.createDefaultsFor(user);
 
         assertThat(savedCategories()).hasSize(2);
         assertThat(savedPayees()).hasSizeLessThanOrEqualTo(1);
@@ -132,9 +130,21 @@ class DefaultDataServiceTest {
     void doesNothingWhenDefaultsAlreadyCreated() {
         user.setIsDefaultsCreated(Boolean.TRUE);
 
-        service.createDefaultsForCurrentUser();
+        service.createDefaultsFor(user);
 
         verify(categoryRepository, never()).saveAll(any());
         verify(payeeRepository, never()).saveAll(any());
+    }
+
+    // Email verification and login run without a logged-in user, so they pass the (managed) user itself
+    @Test
+    void createDefaultsFor_usesTheGivenUser_andMarksItDone() {
+        WalletUser verified = WalletUser.builder().id(1L).isDefaultsCreated(Boolean.FALSE).build();
+
+        service.createDefaultsFor(verified);
+
+        assertThat(savedCategories()).isNotEmpty();
+        assertThat(savedPayees()).isNotEmpty();
+        assertThat(verified.getIsDefaultsCreated()).isTrue();
     }
 }

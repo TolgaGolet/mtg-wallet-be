@@ -13,7 +13,6 @@ public class PayeeSearchRequest {
     @Pattern(regexp = NAME_REGULAR_EXPRESSION)
     private String name;
     private Long categoryId;
-    private Long userId;
     @Size(min = 1, max = 15)
     private String transactionTypeValue;
 }

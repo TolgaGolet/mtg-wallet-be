@@ -10,6 +10,7 @@ import com.mtg.mtgwalletbe.enums.Status;
 import com.mtg.mtgwalletbe.exception.MtgWalletGenericException;
 import com.mtg.mtgwalletbe.mapper.PayeeServiceMapper;
 import com.mtg.mtgwalletbe.service.PayeeService;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -32,14 +33,8 @@ public class PayeeApi {
         return ResponseEntity.ok(payeeServiceMapper.toPayeeResponse(payeeService.create(payeeCreateRequest)));
     }
 
-    @PostMapping("/create-defaults")
-    public ResponseEntity<Void> createDefaults() throws MtgWalletGenericException {
-        payeeService.createDefaults();
-        return ResponseEntity.ok().build();
-    }
-
     @PostMapping("/search")
-    public ResponseEntity<Page<PayeeResponse>> search(@RequestBody @Validated PayeeSearchRequest request, @RequestParam(name = "pageNo", defaultValue = "0") int pageNo) {
+    public ResponseEntity<Page<PayeeResponse>> search(@RequestBody @Validated PayeeSearchRequest request, @RequestParam(name = "pageNo", defaultValue = "0") @Min(0) int pageNo) {
         return ResponseEntity.ok(payeeService.search(request, Status.ACTIVE, PageRequest.of(pageNo, applicationConfigProperties.getDefaultPageSize(), Sort.by("name").ascending())));
     }
 

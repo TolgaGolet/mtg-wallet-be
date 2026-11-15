@@ -14,15 +14,14 @@ import java.util.List;
 
 public class AccountSpecification {
 
-    public static Specification<Account> search(AccountSearchRequest request, Status status) {
-        return (root, query, criteriaBuilder) -> {
+    /**
+     * Always scoped to userId via {@link UserScoped#ownedBy}.
+     */
+    public static Specification<Account> search(AccountSearchRequest request, Status status, Long userId) {
+        return UserScoped.<Account>ownedBy(userId).and((root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
-
             if (request.getId() != null) {
                 predicates.add(criteriaBuilder.equal(root.get("id"), request.getId()));
-            }
-            if (request.getUserId() != null) {
-                predicates.add(criteriaBuilder.equal(root.get("user").get("id"), request.getUserId()));
             }
             if (request.getName() != null) {
                 predicates.add(criteriaBuilder.like(
@@ -41,6 +40,6 @@ public class AccountSpecification {
             }
 
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
-        };
+        });
     }
 }

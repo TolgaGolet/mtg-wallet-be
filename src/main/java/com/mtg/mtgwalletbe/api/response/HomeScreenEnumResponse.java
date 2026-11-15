@@ -5,11 +5,12 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.Set;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class HomeScreenEnumResponse {
-    private Set<Currency> currencies = Set.of(Currency.values());
+    private List<Currency> currencies; // declared order: the frontend falls back to the first one
+    private Currency selectedCurrency; // null until the user picks one
 }

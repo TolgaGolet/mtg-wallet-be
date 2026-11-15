@@ -13,10 +13,12 @@ import java.util.List;
 
 public class CategorySpecification {
 
-    public static Specification<Category> search(CategorySearchRequest request, Status status) {
-        return (root, query, criteriaBuilder) -> {
+    /**
+     * Always scoped to userId via {@link UserScoped#ownedBy}.
+     */
+    public static Specification<Category> search(CategorySearchRequest request, Status status, Long userId) {
+        return UserScoped.<Category>ownedBy(userId).and((root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
-
             if (request.getId() != null) {
                 predicates.add(criteriaBuilder.equal(root.get("id"), request.getId()));
             }
@@ -29,9 +31,6 @@ public class CategorySpecification {
             if (request.getTransactionTypeValue() != null) {
                 predicates.add(criteriaBuilder.equal(root.get("transactionType"), TransactionType.of(request.getTransactionTypeValue())));
             }
-            if (request.getUserId() != null) {
-                predicates.add(criteriaBuilder.equal(root.get("user").get("id"), request.getUserId()));
-            }
             if (request.isChildrenOnly()) {
                 predicates.add(criteriaBuilder.isNull(root.get("parentCategory")));
             }
@@ -43,6 +42,6 @@ public class CategorySpecification {
             }
 
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
-        };
+        });
     }
 }
