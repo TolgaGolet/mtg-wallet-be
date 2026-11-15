@@ -7,10 +7,10 @@ import com.mtg.mtgwalletbe.service.dto.TransactionDto;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-@Mapper(componentModel = "spring")
+@Mapper(config = MtgMapperConfig.class, uses = {AccountServiceMapper.class, PayeeServiceMapper.class})
 public interface TransactionServiceMapper {
     @Mapping(source = "user.id", target = "userId")
-    TransactionDto toTransactionDto(Transaction transactionEntity);
+    TransactionDto toTransactionDto(Transaction transactionEntity); // nested payee via PayeeServiceMapper.toPayeeDto
 
     @Mapping(source = "payee.id", target = "payeeId")
     @Mapping(source = "sourceAccount.id", target = "sourceAccountId")

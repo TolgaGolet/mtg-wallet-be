@@ -20,7 +20,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -78,7 +77,7 @@ class AuthenticationServiceTest {
         when(claims.get(JwtService.TOKEN_TYPE_CLAIM, String.class)).thenReturn(JwtService.REFRESH_TOKEN_TYPE);
         when(userTokenRepository.findByToken(TOKEN)).thenReturn(Optional.of(storedToken(TokenType.REFRESH, false)));
 
-        AuthenticationResponse response = service.refreshToken(request, new MockHttpServletResponse());
+        AuthenticationResponse response = service.refreshToken(request);
 
         assertThat(response.getAccessToken()).isEqualTo("new-access");
         assertThat(response.getRefreshToken()).isEqualTo("new-refresh");
@@ -95,7 +94,7 @@ class AuthenticationServiceTest {
         when(claims.get(JwtService.TOKEN_TYPE_CLAIM, String.class)).thenReturn(JwtService.REFRESH_TOKEN_TYPE);
         when(userTokenRepository.findByToken(TOKEN)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.refreshToken(request, new MockHttpServletResponse()))
+        assertThatThrownBy(() -> service.refreshToken(request))
                 .satisfies(e -> assertThat(errorOf(e)).isEqualTo(GenericExceptionMessages.JWT_NOT_VALID));
     }
 
@@ -104,7 +103,7 @@ class AuthenticationServiceTest {
         when(claims.get(JwtService.TOKEN_TYPE_CLAIM, String.class)).thenReturn(JwtService.REFRESH_TOKEN_TYPE);
         when(userTokenRepository.findByToken(TOKEN)).thenReturn(Optional.of(storedToken(TokenType.REFRESH, true)));
 
-        assertThatThrownBy(() -> service.refreshToken(request, new MockHttpServletResponse()))
+        assertThatThrownBy(() -> service.refreshToken(request))
                 .satisfies(e -> assertThat(errorOf(e)).isEqualTo(GenericExceptionMessages.JWT_NOT_VALID));
         verify(jwtService, never()).generateToken(any());
     }
@@ -116,7 +115,7 @@ class AuthenticationServiceTest {
         when(userTokenRepository.findByToken(TOKEN)).thenReturn(Optional.of(storedToken(TokenType.REFRESH, false)));
         when(walletUserRepository.findByUsername("alice")).thenReturn(Optional.of(WalletUser.builder().id(2L).username("alice").build()));
 
-        service.refreshToken(request, new MockHttpServletResponse());
+        service.refreshToken(request);
 
         verify(jwtService).generateToken(user);
         verify(walletUserRepository, never()).findByUsername(any());
@@ -126,7 +125,7 @@ class AuthenticationServiceTest {
     void refresh_withAccessTokenByTypeClaim_isRejected() {
         when(claims.get(JwtService.TOKEN_TYPE_CLAIM, String.class)).thenReturn(JwtService.ACCESS_TOKEN_TYPE);
 
-        assertThatThrownBy(() -> service.refreshToken(request, new MockHttpServletResponse()))
+        assertThatThrownBy(() -> service.refreshToken(request))
                 .satisfies(e -> assertThat(errorOf(e)).isEqualTo(GenericExceptionMessages.JWT_NOT_VALID));
     }
 
@@ -136,7 +135,7 @@ class AuthenticationServiceTest {
         when(claims.get(JwtService.TOKEN_TYPE_CLAIM, String.class)).thenReturn(null);
         when(userTokenRepository.findByToken(TOKEN)).thenReturn(Optional.of(storedToken(TokenType.BEARER, false)));
 
-        assertThatThrownBy(() -> service.refreshToken(request, new MockHttpServletResponse()))
+        assertThatThrownBy(() -> service.refreshToken(request))
                 .satisfies(e -> assertThat(errorOf(e)).isEqualTo(GenericExceptionMessages.JWT_NOT_VALID));
     }
 
@@ -172,7 +171,7 @@ class AuthenticationServiceTest {
     void missingHeader_isRejected() {
         MockHttpServletRequest noHeader = new MockHttpServletRequest();
 
-        assertThatThrownBy(() -> service.refreshToken(noHeader, new MockHttpServletResponse()))
+        assertThatThrownBy(() -> service.refreshToken(noHeader))
                 .satisfies(e -> assertThat(errorOf(e)).isEqualTo(GenericExceptionMessages.AUTHORIZATION_HEADER_MISSING));
     }
 
@@ -180,7 +179,7 @@ class AuthenticationServiceTest {
     void expiredToken_mapsToJwtExpired() {
         when(jwtService.parseClaims(TOKEN)).thenThrow(mock(ExpiredJwtException.class));
 
-        assertThatThrownBy(() -> service.refreshToken(request, new MockHttpServletResponse()))
+        assertThatThrownBy(() -> service.refreshToken(request))
                 .satisfies(e -> assertThat(errorOf(e)).isEqualTo(GenericExceptionMessages.JWT_EXPIRED));
     }
 

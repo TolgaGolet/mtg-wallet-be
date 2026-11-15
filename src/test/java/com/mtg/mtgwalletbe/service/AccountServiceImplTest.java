@@ -114,13 +114,12 @@ class AccountServiceImplTest {
     }
 
     @Test
-    void adjustBalance_addsDeltaToTheManagedAccount_andReturnsNewBalance() throws Exception {
+    void adjustBalance_addsDeltaToTheManagedAccount() throws Exception {
         Account account = account(10L, CURRENT_USER, "100");
         when(repository.findById(10L)).thenReturn(Optional.of(account));
 
-        BigDecimal result = service.adjustBalance(10L, new BigDecimal("-30.50"));
+        service.adjustBalance(10L, new BigDecimal("-30.50"));
 
-        assertThat(result).isEqualByComparingTo("69.50");
         assertThat(account.getBalance()).isEqualByComparingTo("69.50");
         assertThat(account.getUser().getId()).isEqualTo(CURRENT_USER); // F3: the owner is never rewritten
     }

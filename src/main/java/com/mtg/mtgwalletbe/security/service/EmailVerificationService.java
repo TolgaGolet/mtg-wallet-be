@@ -1,5 +1,6 @@
 package com.mtg.mtgwalletbe.security.service;
 
+import com.mtg.mtgwalletbe.config.FrontendProperties;
 import com.mtg.mtgwalletbe.entity.EmailVerificationToken;
 import com.mtg.mtgwalletbe.entity.WalletUser;
 import com.mtg.mtgwalletbe.exception.MtgWalletGenericException;
@@ -7,7 +8,6 @@ import com.mtg.mtgwalletbe.exception.enums.GenericExceptionMessages;
 import com.mtg.mtgwalletbe.repository.EmailVerificationTokenRepository;
 import com.mtg.mtgwalletbe.service.DefaultDataService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,15 +20,13 @@ public class EmailVerificationService {
     private final EmailVerificationTokenRepository emailVerificationTokenRepository;
     private final OneTimeTokenService oneTimeTokenService;
     private final DefaultDataService defaultDataService;
+    private final FrontendProperties frontendProperties;
     private static final int TOKEN_EXPIRATION_HOURS = 24;
-
-    @Value("${mtgWallet.frontend.url}")
-    private String frontendUrl;
 
     public void createVerificationToken(WalletUser user) {
         String token = oneTimeTokenService.issue(emailVerificationTokenRepository, EmailVerificationToken::new,
                 user, Duration.ofHours(TOKEN_EXPIRATION_HOURS));
-        String verificationUrl = frontendUrl + "/verify-email/" + token;
+        String verificationUrl = frontendProperties.url() + "/verify-email/" + token;
         String emailContent = String.format("""
                 <p>Please click the link below to verify your email address:</p>
                 <p><a href="%s">Verify Email</a></p>

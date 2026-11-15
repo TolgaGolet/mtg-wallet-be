@@ -1,6 +1,7 @@
 package com.mtg.mtgwalletbe.service;
 
 import com.mtg.mtgwalletbe.api.request.PayeeCreateRequest;
+import com.mtg.mtgwalletbe.entity.Category;
 import com.mtg.mtgwalletbe.entity.Payee;
 import com.mtg.mtgwalletbe.entity.WalletUser;
 import com.mtg.mtgwalletbe.enums.Status;
@@ -10,8 +11,8 @@ import com.mtg.mtgwalletbe.exception.enums.GenericExceptionMessages;
 import com.mtg.mtgwalletbe.mapper.PayeeServiceMapper;
 import com.mtg.mtgwalletbe.repository.PayeeRepository;
 import com.mtg.mtgwalletbe.service.dto.CategoryDto;
-import com.mtg.mtgwalletbe.service.dto.PayeeDto;
 import com.mtg.mtgwalletbe.service.dto.WalletUserBasicDto;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,6 +41,7 @@ class PayeeServiceImplTest {
     @Mock private CategoryService categoryService;
     @Mock private UserService userService;
     @Mock private DefaultDataService defaultDataService;
+    @Mock private EntityManager entityManager;
     @InjectMocks private PayeeServiceImpl service;
 
     @BeforeEach
@@ -86,13 +88,32 @@ class PayeeServiceImplTest {
         Payee payee = new Payee();
         payee.setId(5L);
         payee.setUser(WalletUser.builder().id(1L).build());
+        payee.setCategory(category(TransactionType.EXPENSE));
         when(repository.findByIdAndStatus(5L, Status.ACTIVE)).thenReturn(Optional.of(payee));
-        when(mapper.toPayeeDto(payee)).thenReturn(PayeeDto.builder().id(5L)
-                .category(CategoryDto.builder().transactionType(TransactionType.EXPENSE).build()).build());
 
         service.addDefaultPayeeForExpenseToUser(5L);
 
-        verify(userService).setDefaultPayeeForExpense(any());
-        assertThat(payee.getId()).isEqualTo(5L);
+        verify(userService).setDefaultPayeeForExpense(payee); // the managed row, not a copy rebuilt from a DTO
+    }
+
+    @Test
+    void defaultPayee_ofTheOtherType_isRejected() {
+        Payee payee = new Payee();
+        payee.setId(5L);
+        payee.setUser(WalletUser.builder().id(1L).build());
+        payee.setCategory(category(TransactionType.INCOME));
+        when(repository.findByIdAndStatus(5L, Status.ACTIVE)).thenReturn(Optional.of(payee));
+
+        assertThatThrownBy(() -> service.addDefaultPayeeForExpenseToUser(5L))
+                .extracting(e -> ((MtgWalletGenericException) e).getError())
+                .isEqualTo(GenericExceptionMessages.PAYEE_CATEGORY_TRANSACTION_TYPE_NOT_VALID);
+        verify(userService, never()).setDefaultPayeeForExpense(any());
+    }
+
+    private static Category category(TransactionType type) {
+        Category category = new Category();
+        category.setId(7L);
+        category.setTransactionType(type);
+        return category;
     }
 }

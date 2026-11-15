@@ -7,11 +7,10 @@ import com.mtg.mtgwalletbe.entity.WalletUser;
 import com.mtg.mtgwalletbe.service.dto.RoleDto;
 import com.mtg.mtgwalletbe.service.dto.WalletUserBasicDto;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
-@Mapper(componentModel = "spring")
+@Mapper(config = MtgMapperConfig.class)
 public interface UserServiceMapper {
-    WalletUser toWalletUserEntity(WalletUserBasicDto walletUserDto);
-
     WalletUserBasicDto toWalletUserBasicDto(WalletUser walletUser);
 
     Role toRoleEntity(RoleDto roleDto);
@@ -20,5 +19,6 @@ public interface UserServiceMapper {
 
     RoleCreateResponse toRoleResponse(RoleDto roleDto);
 
+    @Mapping(target = "id", ignore = true) // assigned when the role is saved
     RoleDto toRoleDto(RoleCreateRequest roleCreateRequest);
 }

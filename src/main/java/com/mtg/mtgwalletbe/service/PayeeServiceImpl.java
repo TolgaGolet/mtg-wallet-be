@@ -4,7 +4,9 @@ import com.mtg.mtgwalletbe.api.request.*;
 import com.mtg.mtgwalletbe.api.response.CategoryResponse;
 import com.mtg.mtgwalletbe.api.response.PayeeCreateScreenEnumResponse;
 import com.mtg.mtgwalletbe.api.response.PayeeResponse;
+import com.mtg.mtgwalletbe.entity.Category;
 import com.mtg.mtgwalletbe.entity.Payee;
+import com.mtg.mtgwalletbe.entity.WalletUser;
 import com.mtg.mtgwalletbe.enums.Status;
 import com.mtg.mtgwalletbe.enums.TransactionType;
 import com.mtg.mtgwalletbe.exception.MtgWalletGenericException;
@@ -16,11 +18,10 @@ import com.mtg.mtgwalletbe.service.dto.PayeeDto;
 import com.mtg.mtgwalletbe.service.dto.WalletUserBasicDto;
 import com.mtg.mtgwalletbe.specification.PayeeSpecification;
 import com.mtg.mtgwalletbe.util.Names;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Optional;
 
 import static com.mtg.mtgwalletbe.service.DomainLimits.MAX_CATEGORIES;
+import static com.mtg.mtgwalletbe.service.DomainLimits.allByName;
 import static com.mtg.mtgwalletbe.service.DomainLimits.MAX_PAYEES;
 
 @Service
@@ -38,6 +40,7 @@ public class PayeeServiceImpl implements PayeeService {
     private final PayeeServiceMapper mapper;
     private final CategoryService categoryService;
     private final UserService userService;
+    private final EntityManager entityManager;
 
     @Override
     public PayeeDto create(PayeeCreateRequest payeeCreateRequest) throws MtgWalletGenericException {
@@ -52,9 +55,13 @@ public class PayeeServiceImpl implements PayeeService {
             throw new MtgWalletGenericException(GenericExceptionMessages.CATEGORY_NOT_FOUND);
         }
         CategoryDto categoryDto = categoryService.getActiveCategory(payeeCreateRequest.getCategoryId());
-        PayeeDto payeeDtoToSave = PayeeDto.builder().name(payeeCreateRequest.getName())
-                .category(categoryDto).userId(walletUserDto.getId()).status(Status.ACTIVE).build();
-        return mapper.toPayeeDto(repository.save(mapper.toPayeeEntity(payeeDtoToSave)));
+        Payee payee = new Payee();
+        payee.setName(payeeCreateRequest.getName());
+        // The category row getActiveCategory just loaded (same persistence context), so the response has its name
+        payee.setCategory(entityManager.getReference(Category.class, categoryDto.getId()));
+        payee.setUser(entityManager.getReference(WalletUser.class, walletUserDto.getId()));
+        payee.setStatus(Status.ACTIVE);
+        return mapper.toPayeeDto(repository.save(payee));
     }
 
     @Override
@@ -98,27 +105,30 @@ public class PayeeServiceImpl implements PayeeService {
     @Transactional(readOnly = true)
     public PayeeCreateScreenEnumResponse getPayeeCreateScreenEnums() {
         PayeeCreateScreenEnumResponse response = new PayeeCreateScreenEnumResponse();
-        Page<CategoryResponse> categoriesPage = categoryService.search(CategorySearchRequest.builder().build(), Status.ACTIVE, PageRequest.of(0, MAX_CATEGORIES, Sort.by("name").ascending()));
+        Page<CategoryResponse> categoriesPage = categoryService.search(CategorySearchRequest.builder().build(), Status.ACTIVE, allByName(MAX_CATEGORIES));
         response.setCategoryList(categoriesPage.getContent());
         return response;
     }
 
     @Override
     public void addDefaultPayeeForExpenseToUser(Long payeeId) throws MtgWalletGenericException {
-        PayeeDto payeeDto = getActivePayee(payeeId);
-        if (payeeDto.getCategory().getTransactionType() != TransactionType.EXPENSE) {
-            throw new MtgWalletGenericException(GenericExceptionMessages.PAYEE_CATEGORY_TRANSACTION_TYPE_NOT_VALID);
-        }
-        userService.setDefaultPayeeForExpense(mapper.toPayeeEntity(payeeDto));
+        userService.setDefaultPayeeForExpense(activePayeeOfType(payeeId, TransactionType.EXPENSE));
     }
 
     @Override
     public void addDefaultPayeeForIncomeToUser(Long payeeId) throws MtgWalletGenericException {
-        PayeeDto payeeDto = getActivePayee(payeeId);
-        if (payeeDto.getCategory().getTransactionType() != TransactionType.INCOME) {
+        userService.setDefaultPayeeForIncome(activePayeeOfType(payeeId, TransactionType.INCOME));
+    }
+
+    /**
+     * The managed ACTIVE payee the current user owns, whose category is of the given type (for a default payee).
+     */
+    private Payee activePayeeOfType(Long payeeId, TransactionType type) throws MtgWalletGenericException {
+        Payee payee = owned(repository.findByIdAndStatus(payeeId, Status.ACTIVE));
+        if (payee.getCategory().getTransactionType() != type) {
             throw new MtgWalletGenericException(GenericExceptionMessages.PAYEE_CATEGORY_TRANSACTION_TYPE_NOT_VALID);
         }
-        userService.setDefaultPayeeForIncome(mapper.toPayeeEntity(payeeDto));
+        return payee;
     }
 
     /**

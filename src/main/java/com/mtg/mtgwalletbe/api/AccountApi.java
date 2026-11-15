@@ -12,12 +12,11 @@ import com.mtg.mtgwalletbe.service.AccountService;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import static com.mtg.mtgwalletbe.service.DomainLimits.byName;
 import static com.mtg.mtgwalletbe.service.DomainLimits.MAX_ACCOUNTS;
 
 @RestController
@@ -32,9 +31,10 @@ public class AccountApi {
         return ResponseEntity.ok(accountServiceMapper.toAccountResponse(accountService.create(accountCreateRequest)));
     }
 
+    // Page size is MAX_ACCOUNTS, not defaultPageSize, on purpose: the frontend lists all of a user's accounts at once
     @PostMapping("/search")
     public ResponseEntity<Page<AccountResponse>> search(@RequestBody @Validated AccountSearchRequest request, @RequestParam(name = "pageNo", defaultValue = "0") @Min(0) int pageNo) {
-        return ResponseEntity.ok(accountService.search(request, Status.ACTIVE, PageRequest.of(pageNo, MAX_ACCOUNTS, Sort.by("name").ascending())));
+        return ResponseEntity.ok(accountService.search(request, Status.ACTIVE, byName(pageNo, MAX_ACCOUNTS)));
     }
 
     @PutMapping("/update/{id}")

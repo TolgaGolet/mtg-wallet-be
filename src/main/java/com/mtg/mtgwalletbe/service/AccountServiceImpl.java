@@ -86,11 +86,10 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public BigDecimal adjustBalance(Long accountId, BigDecimal delta) throws MtgWalletGenericException {
+    public void adjustBalance(Long accountId, BigDecimal delta) throws MtgWalletGenericException {
         // Any status: rolling back an old transaction may touch an account that has been deleted since
         Account account = owned(repository.findById(accountId)); // persistence-context hit after the first load
-        account.setBalance(account.getBalance().add(delta));
-        return account.getBalance(); // dirty checking saves it; @Version turns a concurrent write into a 409
+        account.setBalance(account.getBalance().add(delta)); // dirty checking saves it; @Version turns a concurrent write into a 409
     }
 
     @Override

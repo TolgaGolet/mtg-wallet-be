@@ -45,9 +45,6 @@ public class Transaction extends Auditable {
     @JoinColumn(name = "source_account_id", nullable = false)
     @ToString.Exclude
     private Account sourceAccount;
-    @NotNull
-    private BigDecimal sourceAccountNewBalance;
-    private BigDecimal targetAccountNewBalance;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "target_account_id")
     @ToString.Exclude

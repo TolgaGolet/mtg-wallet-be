@@ -26,9 +26,9 @@ public interface AccountService {
 
     /**
      * Adds delta (negative to subtract) to the balance of an account the current user owns. The only way balances
-     * change after creation; returns the new balance.
+     * change after creation.
      */
-    BigDecimal adjustBalance(Long accountId, BigDecimal delta) throws MtgWalletGenericException;
+    void adjustBalance(Long accountId, BigDecimal delta) throws MtgWalletGenericException;
 
     void delete(Long id) throws MtgWalletGenericException;
 

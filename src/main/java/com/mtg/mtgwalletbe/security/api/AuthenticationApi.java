@@ -7,7 +7,6 @@ import com.mtg.mtgwalletbe.security.api.response.TotpSetupResponse;
 import com.mtg.mtgwalletbe.security.service.AuthenticationService;
 import dev.samstevens.totp.exceptions.QrGenerationException;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
@@ -35,8 +34,8 @@ public class AuthenticationApi {
     }
 
     @PostMapping("/refresh-token")
-    public ResponseEntity<AuthenticationResponse> refreshToken(HttpServletRequest request, HttpServletResponse response) throws MtgWalletGenericException {
-        return ResponseEntity.ok(authenticationService.refreshToken(request, response));
+    public ResponseEntity<AuthenticationResponse> refreshToken(HttpServletRequest request) throws MtgWalletGenericException {
+        return ResponseEntity.ok(authenticationService.refreshToken(request));
     }
 
     @PostMapping("/totp/setup")

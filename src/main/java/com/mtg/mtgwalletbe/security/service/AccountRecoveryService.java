@@ -1,5 +1,6 @@
 package com.mtg.mtgwalletbe.security.service;
 
+import com.mtg.mtgwalletbe.config.FrontendProperties;
 import com.mtg.mtgwalletbe.entity.AccountRecoveryToken;
 import com.mtg.mtgwalletbe.entity.WalletUser;
 import com.mtg.mtgwalletbe.exception.MtgWalletGenericException;
@@ -7,7 +8,6 @@ import com.mtg.mtgwalletbe.exception.enums.GenericExceptionMessages;
 import com.mtg.mtgwalletbe.repository.AccountRecoveryTokenRepository;
 import com.mtg.mtgwalletbe.security.api.request.AccountRecoveryInitRequest;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,9 +22,7 @@ public class AccountRecoveryService {
     private final AccountRecoveryTokenRepository accountRecoveryTokenRepository;
     private final AuthenticationService authenticationService;
     private final OneTimeTokenService oneTimeTokenService;
-
-    @Value("${mtgWallet.frontend.url}")
-    private String frontendUrl;
+    private final FrontendProperties frontendProperties;
 
     private static final int TOKEN_EXPIRATION_MINUTES = 10;
 
@@ -32,7 +30,7 @@ public class AccountRecoveryService {
         WalletUser user = authenticationService.authenticateUser(request.getUsername(), request.getPassword());
         String token = oneTimeTokenService.issue(accountRecoveryTokenRepository, AccountRecoveryToken::new,
                 user, Duration.ofMinutes(TOKEN_EXPIRATION_MINUTES));
-        String recoveryUrl = frontendUrl + "/recover-account/" + token;
+        String recoveryUrl = frontendProperties.url() + "/recover-account/" + token;
         String emailContent = String.format("""
                 <p>You have requested to recover your account. <b>This action will disable your two factor authentication.</b> You should enable this feature once you login for your security.</p>
                 <p>Please click the link below to proceed:</p>

@@ -1,6 +1,5 @@
 package com.mtg.mtgwalletbe.specification;
 
-import com.mtg.mtgwalletbe.util.Names;
 import com.mtg.mtgwalletbe.api.request.AccountSearchRequest;
 import com.mtg.mtgwalletbe.entity.Account;
 import com.mtg.mtgwalletbe.enums.AccountType;
@@ -24,10 +23,7 @@ public class AccountSpecification {
                 predicates.add(criteriaBuilder.equal(root.get("id"), request.getId()));
             }
             if (request.getName() != null) {
-                predicates.add(criteriaBuilder.like(
-                        criteriaBuilder.lower(root.get("name")),
-                        "%" + Names.normalize(request.getName()) + "%"
-                ));
+                predicates.add(LikePatterns.contains(criteriaBuilder, root.get("name"), request.getName()));
             }
             if (request.getTypeValue() != null) {
                 predicates.add(criteriaBuilder.equal(root.get("type"), AccountType.of(request.getTypeValue())));
