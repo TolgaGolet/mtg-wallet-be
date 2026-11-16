@@ -10,14 +10,15 @@ public final class Names {
     }
 
     /**
-     * Trims and lowercases with Turkish rules (İ/i, I/ı). Shared by name searches and uniqueness checks.
+     * Trims and lowercases with Turkish rules (İ/i, I/ı). Searches fold differently (specification.LikePatterns:
+     * every I form matches).
      */
-    public static String normalize(String name) {
+    private static String normalize(String name) {
         return name.trim().toLowerCase(TURKISH);
     }
 
     /**
-     * Case-insensitive name comparison with Turkish rules, matching how search lowercases names.
+     * Case-insensitive name comparison with Turkish rules.
      */
     public static boolean sameName(String a, String b) {
         if (a == null || b == null) {

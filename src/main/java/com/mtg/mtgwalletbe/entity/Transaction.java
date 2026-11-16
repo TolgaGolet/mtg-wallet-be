@@ -3,6 +3,7 @@ package com.mtg.mtgwalletbe.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.mtg.mtgwalletbe.entity.auditing.Auditable;
 import com.mtg.mtgwalletbe.enums.TransactionType;
+import com.mtg.mtgwalletbe.util.SearchText;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -51,9 +52,19 @@ public class Transaction extends Auditable {
     private Account targetAccount;
     @Column(length = 50)
     private String notes;
+    // fold(notes), kept in step on every write; searches match against this column (see SearchText)
+    @Column(length = 50)
+    @Setter(AccessLevel.NONE)
+    private String searchNotes;
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     @JsonIgnore
     @ToString.Exclude
     private WalletUser user;
+
+    @PrePersist
+    @PreUpdate
+    void refreshSearchText() {
+        searchNotes = SearchText.fold(notes);
+    }
 }

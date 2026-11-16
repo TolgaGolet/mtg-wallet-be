@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -36,4 +37,12 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long>,
                                                                          @Param("currency") Currency currency,
                                                                          @Param("expenseTransactionType") TransactionType expenseTransactionType,
                                                                          @Param("transactionTypes") List<TransactionType> transactionTypes);
+
+    // Startup backfill of searchNotes (SearchTextBackfill); the bulk update skips auditing and @Version
+    @Query("SELECT t.id AS id, t.notes AS text FROM Transaction t WHERE t.searchNotes IS NULL AND t.notes IS NOT NULL ORDER BY t.id")
+    List<SearchTextSource> findWithoutSearchText(Pageable pageable);
+
+    @Modifying
+    @Query("UPDATE Transaction t SET t.searchNotes = :searchText WHERE t.id = :id")
+    void setSearchText(@Param("id") Long id, @Param("searchText") String searchText);
 }

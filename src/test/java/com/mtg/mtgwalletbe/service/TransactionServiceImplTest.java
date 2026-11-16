@@ -121,6 +121,24 @@ class TransactionServiceImplTest {
         return transaction;
     }
 
+    private Transaction existingTransfer() {
+        Transaction transfer = existingTransaction();
+        transfer.setType(TransactionType.TRANSFER);
+        Account target = new Account();
+        target.setId(11L);
+        transfer.setTargetAccount(target);
+        return transfer;
+    }
+
+    // Transaction 100 belongs to user 2, so the ownership check fails
+    private void givenTransactionOfAnotherUser() throws Exception {
+        Transaction foreign = existingTransaction();
+        foreign.setUser(WalletUser.builder().id(2L).build());
+        when(repository.findById(100L)).thenReturn(Optional.of(foreign));
+        doThrow(new MtgWalletGenericException(GenericExceptionMessages.NOT_AUTHORIZED_TO_PERFORM))
+                .when(userService).validateUserIdIfItsTheCurrentUser(2L);
+    }
+
     private TransactionUpdateRequest updateRequest(long sourceAccountId, long payeeId) {
         TransactionUpdateRequest request = new TransactionUpdateRequest();
         request.setTypeValue("EXP");
@@ -251,11 +269,7 @@ class TransactionServiceImplTest {
 
     @Test
     void delete_transfer_reversesBothAccounts() throws Exception {
-        Transaction transfer = existingTransaction();
-        transfer.setType(TransactionType.TRANSFER);
-        Account target = new Account();
-        target.setId(11L);
-        transfer.setTargetAccount(target);
+        Transaction transfer = existingTransfer();
         when(repository.findById(100L)).thenReturn(Optional.of(transfer));
 
         service.delete(100L);
@@ -280,5 +294,164 @@ class TransactionServiceImplTest {
         assertThat(saved).extracting(BalanceChange::id).containsExactly(10L);
         assertThat(saved.get(0).balance()).isEqualByComparingTo("1050");
         verify(repository).delete(transfer);
+    }
+
+    // payeeId -1 (TransactionWriteRequest.NEW_PAYEE_ID): the frontend's "new payee" option
+    @Test
+    void create_withNewPayeeId_createsThePayeeFromNameAndCategory() throws Exception {
+        TransactionCreateRequest request = createRequest("EXP", null);
+        request.setPayeeId(com.mtg.mtgwalletbe.api.request.TransactionWriteRequest.NEW_PAYEE_ID);
+        request.setPayeeName("New Shop");
+        request.setCategoryId(7L);
+        when(payeeService.create(any())).thenReturn(payee(55L));
+        org.mockito.ArgumentCaptor<com.mtg.mtgwalletbe.api.request.PayeeCreateRequest> payeeRequest =
+                org.mockito.ArgumentCaptor.forClass(com.mtg.mtgwalletbe.api.request.PayeeCreateRequest.class);
+
+        service.create(request);
+
+        verify(payeeService).create(payeeRequest.capture());
+        assertThat(payeeRequest.getValue().getName()).isEqualTo("New Shop");
+        assertThat(payeeRequest.getValue().getCategoryId()).isEqualTo(7L);
+        verify(entityManager).getReference(Payee.class, 55L);
+        verify(payeeService, never()).getActivePayee(anyLong());
+    }
+
+    // Validation runs before the payee is created, so a rejected transaction leaves no orphan payee behind
+    @Test
+    void create_invalidTransfer_withNewPayee_createsNoPayee() throws Exception {
+        TransactionCreateRequest request = createRequest("TRA", 10L); // same account
+        request.setPayeeId(com.mtg.mtgwalletbe.api.request.TransactionWriteRequest.NEW_PAYEE_ID);
+        request.setPayeeName("New Shop");
+
+        assertThatThrownBy(() -> service.create(request)).isInstanceOf(MtgWalletGenericException.class);
+        verify(payeeService, never()).create(any());
+        assertThat(changes).isEmpty();
+    }
+
+    @Test
+    void create_transferWithoutTarget_isRejected() {
+        TransactionCreateRequest request = createRequest("TRA", null);
+
+        assertThatThrownBy(() -> service.create(request))
+                .extracting(e -> ((MtgWalletGenericException) e).getError())
+                .isEqualTo(GenericExceptionMessages.ACCOUNT_NOT_FOUND);
+        assertThat(changes).isEmpty();
+    }
+
+    @Test
+    void create_withDeletedSourceAccount_isRejected_withoutBalanceChanges() throws Exception {
+        when(accountService.getActiveAccountById(10L)).thenThrow(new MtgWalletGenericException(GenericExceptionMessages.ACCOUNT_NOT_FOUND));
+
+        assertThatThrownBy(() -> service.create(createRequest("EXP", null)))
+                .extracting(e -> ((MtgWalletGenericException) e).getError())
+                .isEqualTo(GenericExceptionMessages.ACCOUNT_NOT_FOUND);
+        assertThat(changes).isEmpty();
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void update_missingTransaction_isNotFound() {
+        when(repository.findById(404L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.update(updateRequest(10L, 5L), 404L))
+                .extracting(e -> ((MtgWalletGenericException) e).getError())
+                .isEqualTo(GenericExceptionMessages.TRANSACTION_NOT_FOUND);
+    }
+
+    @Test
+    void update_ofOtherUsersTransaction_isRejected_withoutBalanceChanges() throws Exception {
+        givenTransactionOfAnotherUser();
+
+        assertThatThrownBy(() -> service.update(updateRequest(10L, 5L), 100L))
+                .extracting(e -> ((MtgWalletGenericException) e).getError())
+                .isEqualTo(GenericExceptionMessages.NOT_AUTHORIZED_TO_PERFORM);
+        assertThat(changes).isEmpty();
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void delete_ofOtherUsersTransaction_isRejected_withoutBalanceChanges() throws Exception {
+        givenTransactionOfAnotherUser();
+
+        assertThatThrownBy(() -> service.delete(100L)).isInstanceOf(MtgWalletGenericException.class);
+        assertThat(changes).isEmpty();
+        verify(repository, never()).delete(any(Transaction.class));
+    }
+
+    // Changing a transfer into an expense must give the old target its money back
+    @Test
+    void update_transferToExpense_rollsBackBothOldAccounts_thenAppliesToSourceOnly() throws Exception {
+        Transaction transfer = existingTransfer(); // 50 from 10 to 11
+        when(repository.findById(100L)).thenReturn(Optional.of(transfer));
+
+        service.update(updateRequest(10L, 5L), 100L); // EXPENSE 60 from 10
+
+        assertThat(balances.get(10L)).isEqualByComparingTo("990");  // +50 rollback, -60 apply
+        assertThat(balances.get(11L)).isEqualByComparingTo("950");  // -50 rollback of the old transfer-in
+        assertThat(transfer.getType()).isEqualTo(TransactionType.EXPENSE);
+        assertThat(transfer.getTargetAccount()).isNull();
+    }
+
+    @Test
+    void update_toTheOldDeletedTargetAccount_isAllowed_butANewOneMustBeActive() throws Exception {
+        Transaction transfer = existingTransfer();
+        when(repository.findById(100L)).thenReturn(Optional.of(transfer));
+        TransactionUpdateRequest request = updateRequest(10L, 5L);
+        request.setTypeValue("TRA");
+        request.setTargetAccountId(11L);
+
+        service.update(request, 100L);
+
+        verify(accountService).getAccountById(11L);
+        verify(accountService, never()).getActiveAccountById(11L);
+    }
+
+    @Test
+    void profitLoss_missingArguments_areRejected() {
+        LocalDateTime now = LocalDateTime.now();
+
+        assertThatThrownBy(() -> service.getProfitLossByCurrentUserAndDateIntervalAndCurrency(null, now, Currency.TRY))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> service.getProfitLossByCurrentUserAndDateIntervalAndCurrency(now, null, Currency.TRY))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> service.getProfitLossByCurrentUserAndDateIntervalAndCurrency(now, now, null))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void profitLoss_withoutTransactions_isZero_notNull() {
+        LocalDateTime start = LocalDateTime.of(2026, 1, 1, 0, 0);
+        LocalDateTime end = LocalDateTime.of(2026, 2, 1, 0, 0);
+        when(repository.getProfitLossByUserIdAndDateIntervalAndCurrency(eq(1L), eq(start), eq(end), eq(Currency.TRY), any(), any()))
+                .thenReturn(Optional.empty());
+
+        assertThat(service.getProfitLossByCurrentUserAndDateIntervalAndCurrency(start, end, Currency.TRY)).isEqualByComparingTo("0");
+    }
+
+    @Test
+    void profitLoss_countsExpenseAsTheNegativeType_andExcludesTransfers() {
+        LocalDateTime start = LocalDateTime.of(2026, 1, 1, 0, 0);
+        LocalDateTime end = LocalDateTime.of(2026, 2, 1, 0, 0);
+        when(repository.getProfitLossByUserIdAndDateIntervalAndCurrency(anyLong(), any(), any(), any(), any(), any()))
+                .thenReturn(Optional.of(new BigDecimal("-12.50")));
+
+        assertThat(service.getProfitLossByCurrentUserAndDateIntervalAndCurrency(start, end, Currency.TRY)).isEqualByComparingTo("-12.50");
+        verify(repository).getProfitLossByUserIdAndDateIntervalAndCurrency(1L, start, end, Currency.TRY,
+                TransactionType.EXPENSE, List.of(TransactionType.EXPENSE, TransactionType.INCOME));
+    }
+
+    @Test
+    void createScreenEnums_listActiveCategoriesAndAccounts() {
+        var category = new com.mtg.mtgwalletbe.api.response.CategoryResponse();
+        var account = new com.mtg.mtgwalletbe.api.response.AccountResponse();
+        when(categoryService.search(any(), eq(com.mtg.mtgwalletbe.enums.Status.ACTIVE), any()))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(category)));
+        when(accountService.search(any(), eq(com.mtg.mtgwalletbe.enums.Status.ACTIVE), any()))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(account)));
+
+        var enums = service.getTransactionCreateScreenEnums();
+
+        assertThat(enums.getCategoryList()).containsExactly(category);
+        assertThat(enums.getAccountList()).containsExactly(account);
     }
 }
