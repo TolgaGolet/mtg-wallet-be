@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -32,4 +33,12 @@ public interface PayeeRepository extends JpaRepository<Payee, Long>, JpaSpecific
 
     @Query("SELECT p.name FROM Payee p WHERE p.user.id = :userId AND p.status = :status AND p.id <> :excludeId")
     List<String> findNamesByUserIdAndStatus(@Param("userId") Long userId, @Param("status") Status status, @Param("excludeId") Long excludeId);
+
+    // Startup backfill of searchName (SearchTextBackfill); the bulk update skips auditing and @Version
+    @Query("SELECT p.id AS id, p.name AS text FROM Payee p WHERE p.searchName IS NULL ORDER BY p.id")
+    List<SearchTextSource> findWithoutSearchText(Pageable pageable);
+
+    @Modifying
+    @Query("UPDATE Payee p SET p.searchName = :searchText WHERE p.id = :id")
+    void setSearchText(@Param("id") Long id, @Param("searchText") String searchText);
 }

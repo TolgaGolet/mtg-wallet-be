@@ -179,6 +179,149 @@ class CategoryServiceImplTest {
         assertThat(parent.getIsParent()).isFalse();
     }
 
+    @Test
+    void create_atLimit_isRejected() {
+        when(repository.countByUserIdAndStatus(1L, Status.ACTIVE)).thenReturn((long) DomainLimits.MAX_CATEGORIES);
+        CategoryCreateRequest request = CategoryCreateRequest.builder().name("Gas").transactionTypeValue("EXP").build();
+
+        assertThat(errorOf(() -> service.create(request))).isEqualTo(GenericExceptionMessages.CATEGORIES_LIMIT_EXCEEDED);
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void create_withoutParent_savesActiveTopLevelCategoryOfCurrentUser() throws Exception {
+        org.mockito.ArgumentCaptor<com.mtg.mtgwalletbe.service.dto.CategoryDto> dto =
+                org.mockito.ArgumentCaptor.forClass(com.mtg.mtgwalletbe.service.dto.CategoryDto.class);
+        when(mapper.toCategoryEntity(any())).thenReturn(new Category());
+
+        service.create(CategoryCreateRequest.builder().name("Gas").transactionTypeValue("EXP").build());
+
+        verify(mapper).toCategoryEntity(dto.capture());
+        assertThat(dto.getValue().getUserId()).isEqualTo(1L);
+        assertThat(dto.getValue().getTransactionType()).isEqualTo(TransactionType.EXPENSE);
+        assertThat(dto.getValue().getParentCategoryId()).isNull();
+        assertThat(dto.getValue().getIsParent()).isFalse();
+        assertThat(dto.getValue().getStatus()).isEqualTo(Status.ACTIVE);
+    }
+
+    @Test
+    void create_withParent_linksItAndMarksTheParent() throws Exception {
+        Category parent = category(7, TransactionType.EXPENSE, null, false);
+        org.mockito.ArgumentCaptor<com.mtg.mtgwalletbe.service.dto.CategoryDto> dto =
+                org.mockito.ArgumentCaptor.forClass(com.mtg.mtgwalletbe.service.dto.CategoryDto.class);
+        when(mapper.toCategoryEntity(any())).thenReturn(new Category());
+
+        service.create(CategoryCreateRequest.builder().name("Gas").transactionTypeValue("EXP").parentCategoryId(7L).build());
+
+        verify(mapper).toCategoryEntity(dto.capture());
+        assertThat(dto.getValue().getParentCategoryId()).isEqualTo(7L);
+        assertThat(parent.getIsParent()).isTrue();
+        verify(repository).save(parent);
+    }
+
+    // Same name under the other transaction type is fine: uniqueness is per type
+    @Test
+    void create_nameCheck_isScopedToTheTransactionType() throws Exception {
+        when(repository.findNamesByUserIdAndStatusAndType(1L, Status.ACTIVE, TransactionType.INCOME, -1L)).thenReturn(List.of());
+        when(mapper.toCategoryEntity(any())).thenReturn(new Category());
+
+        service.create(CategoryCreateRequest.builder().name("Other").transactionTypeValue("INC").build());
+
+        verify(repository).findNamesByUserIdAndStatusAndType(1L, Status.ACTIVE, TransactionType.INCOME, -1L);
+    }
+
+    @Test
+    void create_withParentThatHasAParent_isRejected() {
+        Category grandParent = category(1, TransactionType.EXPENSE, null, true);
+        category(7, TransactionType.EXPENSE, grandParent, false);
+        CategoryCreateRequest request = CategoryCreateRequest.builder().name("Gas").transactionTypeValue("EXP").parentCategoryId(7L).build();
+
+        assertThat(errorOf(() -> service.create(request)))
+                .isEqualTo(GenericExceptionMessages.CATEGORY_WITH_PARENT_CATEGORY_NOT_ALLOWED_AS_PARENT_CATEGORY);
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void update_toAnotherCategorysName_isRejected() {
+        Category category = category(5, TransactionType.EXPENSE, null, false);
+        when(repository.findNamesByUserIdAndStatusAndType(1L, Status.ACTIVE, TransactionType.EXPENSE, 5L)).thenReturn(List.of("Market"));
+
+        assertThat(errorOf(() -> service.update(CategoryUpdateRequest.builder().name("MARKET").build(), 5L)))
+                .isEqualTo(GenericExceptionMessages.CATEGORY_NAME_ALREADY_EXISTS);
+        assertThat(category.getName()).isEqualTo("Category 5");
+    }
+
+    // One level of nesting: a category that has children can't itself get a parent
+    @Test
+    void update_parentCategoryGettingAParent_isRejected() {
+        category(5, TransactionType.EXPENSE, null, true);
+        category(7, TransactionType.EXPENSE, null, false);
+
+        assertThat(errorOf(() -> service.update(update(7L), 5L)))
+                .isEqualTo(GenericExceptionMessages.PARENT_CATEGORY_CANT_HAVE_PARENT_CATEGORY);
+    }
+
+    @Test
+    void update_keepingTheSameParent_doesNotRecomputeItsFlag() throws Exception {
+        Category parent = category(1, TransactionType.EXPENSE, null, true);
+        Category child = category(5, TransactionType.EXPENSE, parent, false);
+
+        service.update(update(1L), 5L);
+
+        assertThat(child.getName()).isEqualTo("Renamed");
+        assertThat(child.getParentCategory()).isSameAs(parent);
+        assertThat(parent.getIsParent()).isTrue();
+        verify(repository, never()).existsByParentCategoryIdAndStatus(1L, Status.ACTIVE);
+    }
+
+    @Test
+    void update_ofOtherUsersCategory_isRejected() throws Exception {
+        Category category = category(5, TransactionType.EXPENSE, null, false);
+        category.setUser(WalletUser.builder().id(2L).build());
+        doThrow(new MtgWalletGenericException(GenericExceptionMessages.NOT_AUTHORIZED_TO_PERFORM))
+                .when(userService).validateUserIdIfItsTheCurrentUser(2L);
+
+        assertThat(errorOf(() -> service.update(update(null), 5L))).isEqualTo(GenericExceptionMessages.NOT_AUTHORIZED_TO_PERFORM);
+        assertThat(category.getName()).isEqualTo("Category 5");
+    }
+
+    @Test
+    void delete_topLevelCategoryWithoutChildren_isSoftDeleted() throws Exception {
+        Category category = category(5, TransactionType.EXPENSE, null, false);
+
+        service.delete(5L);
+
+        assertThat(category.getStatus()).isEqualTo(Status.DELETED);
+        assertThat(category.getName()).isEqualTo("Category 5");
+    }
+
+    @Test
+    void getActiveCategory_deletedOrMissing_isNotFound() {
+        when(repository.findByIdAndStatus(42L, Status.ACTIVE)).thenReturn(Optional.empty());
+
+        assertThat(errorOf(() -> service.getActiveCategory(42L))).isEqualTo(GenericExceptionMessages.CATEGORY_NOT_FOUND);
+    }
+
+    // The "parent" dropdown offers top-level categories only (childrenOnly = no parent), as select options
+    @Test
+    void createScreenEnums_listTopLevelActiveCategoriesAsOptions() {
+        when(userService.getCurrentUserId()).thenReturn(1L);
+        com.mtg.mtgwalletbe.api.response.CategoryResponse response = new com.mtg.mtgwalletbe.api.response.CategoryResponse();
+        com.mtg.mtgwalletbe.api.response.CategorySelectResponse option = new com.mtg.mtgwalletbe.api.response.CategorySelectResponse();
+        when(repository.findAll(any(org.springframework.data.jpa.domain.Specification.class), any(org.springframework.data.domain.Pageable.class)))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(new Category())));
+        when(mapper.toCategoryResponse(any(Category.class))).thenReturn(response);
+        when(mapper.toCategorySelectResponse(response)).thenReturn(option);
+
+        var enums = service.getCategoryCreateScreenEnums();
+
+        assertThat(enums.getParentCategoryList()).containsExactly(option);
+        org.mockito.ArgumentCaptor<org.springframework.data.domain.Pageable> page =
+                org.mockito.ArgumentCaptor.forClass(org.springframework.data.domain.Pageable.class);
+        verify(repository).findAll(any(org.springframework.data.jpa.domain.Specification.class), page.capture());
+        assertThat(page.getValue().getPageSize()).isEqualTo(DomainLimits.MAX_CATEGORIES);
+    }
+
     // CQ-17: not found throws instead of returning null
     @Test
     void getCategory_missing_throwsNotFound() {

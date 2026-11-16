@@ -23,7 +23,7 @@ public class AccountSpecification {
                 predicates.add(criteriaBuilder.equal(root.get("id"), request.getId()));
             }
             if (request.getName() != null) {
-                predicates.add(LikePatterns.contains(criteriaBuilder, root.get("name"), request.getName()));
+                predicates.add(LikePatterns.contains(criteriaBuilder, root.get("searchName"), request.getName()));
             }
             if (request.getTypeValue() != null) {
                 predicates.add(criteriaBuilder.equal(root.get("type"), AccountType.of(request.getTypeValue())));

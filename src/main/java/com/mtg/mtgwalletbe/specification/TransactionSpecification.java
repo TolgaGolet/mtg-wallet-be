@@ -28,7 +28,7 @@ public class TransactionSpecification {
                 predicates.add(criteriaBuilder.equal(root.get("payee").get("id"), request.getPayeeId()));
             }
             if (request.getPayeeName() != null) {
-                predicates.add(LikePatterns.contains(criteriaBuilder, root.get("payee").get("name"), request.getPayeeName()));
+                predicates.add(LikePatterns.contains(criteriaBuilder, root.get("payee").get("searchName"), request.getPayeeName()));
             }
             if (request.getAmount() != null) {
                 predicates.add(criteriaBuilder.equal(root.get("amount"), request.getAmount()));
@@ -50,7 +50,7 @@ public class TransactionSpecification {
                 predicates.add(criteriaBuilder.or(sourceOrTargetAccountPredicates.toArray(new Predicate[0])));
             }
             if (request.getNotes() != null) {
-                predicates.add(LikePatterns.contains(criteriaBuilder, root.get("notes"), request.getNotes()));
+                predicates.add(LikePatterns.contains(criteriaBuilder, root.get("searchNotes"), request.getNotes()));
             }
 
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));

@@ -2,7 +2,6 @@ package com.mtg.mtgwalletbe.api;
 
 import com.mtg.mtgwalletbe.aspect.ServiceLogWriter;
 import com.mtg.mtgwalletbe.config.ApplicationConfigProperties;
-import com.mtg.mtgwalletbe.exception.MtgWalletExceptionHandler;
 import com.mtg.mtgwalletbe.mapper.TransactionServiceMapper;
 import com.mtg.mtgwalletbe.service.TransactionService;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,8 +12,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
+import static com.mtg.mtgwalletbe.WebLayerTestSupport.mvcFor;
 import static com.mtg.mtgwalletbe.security.SecurityParams.ERROR_CODE_HEADER;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -38,10 +38,10 @@ class ApiErrorMappingTest {
         when(properties.getDefaultPageSize()).thenReturn(10);
         when(transactionService.search(any(), any())).thenReturn(Page.empty());
         TransactionApi api = new TransactionApi(properties, transactionService, mock(TransactionServiceMapper.class));
-        mvc = MockMvcBuilders.standaloneSetup(api).setControllerAdvice(new MtgWalletExceptionHandler(serviceLogWriter)).build();
+        mvc = mvcFor(api, serviceLogWriter);
     }
 
-    private static org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder search(String pageNo) {
+    private static MockHttpServletRequestBuilder search(String pageNo) {
         return post("/transaction/search").param("pageNo", pageNo).contentType(MediaType.APPLICATION_JSON).content("{}");
     }
 

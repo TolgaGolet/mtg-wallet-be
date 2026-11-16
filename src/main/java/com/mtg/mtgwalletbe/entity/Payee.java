@@ -3,6 +3,7 @@ package com.mtg.mtgwalletbe.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.mtg.mtgwalletbe.entity.auditing.Auditable;
 import com.mtg.mtgwalletbe.enums.Status;
+import com.mtg.mtgwalletbe.util.SearchText;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -24,6 +25,10 @@ public class Payee extends Auditable {
     @NotNull
     @Column(length = 50)
     private String name;
+    // fold(name), kept in step on every write; searches match against this column (see SearchText)
+    @Column(length = 50)
+    @Setter(AccessLevel.NONE)
+    private String searchName;
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY) // search fetches it with an entity graph (PayeeRepository.findAll)
     @ToString.Exclude
@@ -36,4 +41,10 @@ public class Payee extends Auditable {
     @NotNull
     @Column(length = 10)
     private Status status;
+
+    @PrePersist
+    @PreUpdate
+    void refreshSearchText() {
+        searchName = SearchText.fold(name);
+    }
 }
