@@ -237,4 +237,125 @@ class UserServiceImplTest {
         assertThat(session.isRevoked()).isTrue();
         assertThat(session.isExpired()).isTrue();
     }
+
+    @Test
+    void anonymize_twice_givesDifferentUsernames_soTheUniqueColumnDoesNotClash() {
+        when(passwordEncoder.encode(anyString())).thenReturn("random-hash");
+        service.anonymizeCurrentUser();
+        String first = managed.getUsername();
+        managed.setUsername("alice");
+
+        service.anonymizeCurrentUser();
+
+        assertThat(managed.getUsername()).isNotEqualTo(first).hasSize(15);
+    }
+
+    @Test
+    void changePassword_confirmationMismatch_isRejected_andKeepsTheOldHash() {
+        when(passwordEncoder.matches("current", "hash")).thenReturn(true);
+        ChangePasswordRequest request = ChangePasswordRequest.builder().currentPassword("current").newPassword("New1!pass").confirmPassword("Other1!pass").build();
+
+        assertThatThrownBy(() -> service.changePassword(request))
+                .extracting(e -> ((MtgWalletGenericException) e).getError())
+                .isEqualTo(GenericExceptionMessages.PASSWORDS_MISMATCH);
+        assertThat(managed.getPassword()).isEqualTo("hash");
+        verify(passwordEncoder, never()).encode(anyString());
+    }
+
+    @Test
+    void validateUserId_null_isRejectedAsMissing() {
+        assertThatThrownBy(() -> service.validateUserIdIfItsTheCurrentUser(null))
+                .extracting(e -> ((MtgWalletGenericException) e).getError())
+                .isEqualTo(GenericExceptionMessages.USER_ID_CANT_BE_NULL);
+    }
+
+    @Test
+    void currentUserId_withoutAuthentication_throwsUserNotFound() {
+        SecurityContextHolder.clearContext();
+
+        assertThatThrownBy(() -> service.getCurrentUserId())
+                .isInstanceOf(org.springframework.security.core.userdetails.UsernameNotFoundException.class);
+    }
+
+    @Test
+    void currentUsername_isEmptyForAnonymousOrMissingAuthentication() {
+        SecurityContextHolder.getContext().setAuthentication(
+                new AnonymousAuthenticationToken("key", "anonymousUser", AuthorityUtils.createAuthorityList("ROLE_ANONYMOUS")));
+        assertThat(service.getCurrentLoggedInUsername()).isEmpty();
+
+        SecurityContextHolder.clearContext();
+        assertThat(service.getCurrentLoggedInUsername()).isEmpty();
+    }
+
+    @Test
+    void currentUsername_isEmptyForUnauthenticatedToken() {
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken("alice", "pw")); // not authenticated
+
+        assertThat(service.getCurrentLoggedInUsername()).isEmpty();
+    }
+
+    // A token whose username was since freed (deleted / anonymized account) must not resolve to anyone
+    @Test
+    void currentUserEntity_whenTheRowIsGone_throwsUserNotFound() {
+        when(walletUserRepository.findById(7L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.getCurrentUserEntity())
+                .isInstanceOf(org.springframework.security.core.userdetails.UsernameNotFoundException.class);
+    }
+
+    @Test
+    void defaultPayees_areSetOnTheManagedUser() {
+        com.mtg.mtgwalletbe.entity.Payee expense = new com.mtg.mtgwalletbe.entity.Payee();
+        com.mtg.mtgwalletbe.entity.Payee income = new com.mtg.mtgwalletbe.entity.Payee();
+
+        service.setDefaultPayeeForExpense(expense);
+        service.setDefaultPayeeForIncome(income);
+
+        assertThat(managed.getDefaultPayeeForExpense()).isSameAs(expense);
+        assertThat(managed.getDefaultPayeeForIncome()).isSameAs(income);
+        assertThat(principal.getDefaultPayeeForExpense()).isNull(); // the detached principal is not the row
+    }
+
+    @Test
+    void createRole_duplicateName_isRejected() {
+        com.mtg.mtgwalletbe.service.dto.RoleDto role = new com.mtg.mtgwalletbe.service.dto.RoleDto();
+        role.setName("ROLE_ADMIN");
+        when(roleRepository.findByName("ROLE_ADMIN")).thenReturn(Optional.of(new com.mtg.mtgwalletbe.entity.Role()));
+
+        assertThatThrownBy(() -> service.createRole(role))
+                .extracting(e -> ((MtgWalletGenericException) e).getError())
+                .isEqualTo(GenericExceptionMessages.ROLE_NAME_ALREADY_EXISTS);
+        verify(roleRepository, never()).save(any());
+    }
+
+    @Test
+    void addRoleToUser_addsTheRole() throws Exception {
+        com.mtg.mtgwalletbe.entity.Role admin = new com.mtg.mtgwalletbe.entity.Role(3L, "ROLE_ADMIN");
+        when(walletUserRepository.findByUsername("alice")).thenReturn(Optional.of(managed));
+        when(roleRepository.findByName("ROLE_ADMIN")).thenReturn(Optional.of(admin));
+
+        service.addRoleToUser("alice", "ROLE_ADMIN");
+
+        assertThat(managed.getRoles()).containsExactly(admin);
+        verify(walletUserRepository).save(managed);
+    }
+
+    @Test
+    void addRoleToUser_unknownRole_isRejected() {
+        when(walletUserRepository.findByUsername("alice")).thenReturn(Optional.of(managed));
+        when(roleRepository.findByName("ROLE_NOPE")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.addRoleToUser("alice", "ROLE_NOPE"))
+                .extracting(e -> ((MtgWalletGenericException) e).getError())
+                .isEqualTo(GenericExceptionMessages.ROLE_NOT_FOUND);
+        assertThat(managed.getRoles()).isEmpty();
+    }
+
+    @Test
+    void addRoleToUser_unknownUser_throwsUserNotFound() {
+        when(walletUserRepository.findByUsername("ghost")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.addRoleToUser("ghost", "ROLE_ADMIN"))
+                .isInstanceOf(org.springframework.security.core.userdetails.UsernameNotFoundException.class);
+    }
 }
