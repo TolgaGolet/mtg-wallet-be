@@ -3,8 +3,6 @@ package com.mtg.mtgwalletbe.repository;
 import com.mtg.mtgwalletbe.entity.Category;
 import com.mtg.mtgwalletbe.enums.Status;
 import com.mtg.mtgwalletbe.enums.TransactionType;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -24,12 +22,4 @@ public interface CategoryRepository extends JpaRepository<Category, Long>, JpaSp
     List<String> findNamesByUserIdAndStatusAndType(@Param("userId") Long userId, @Param("status") Status status, @Param("type") TransactionType type, @Param("excludeId") Long excludeId);
 
     List<Category> findAllByUserIdAndStatus(Long userId, Status status);
-
-    // Startup backfill of searchName (SearchTextBackfill); the bulk update skips auditing and @Version
-    @Query("SELECT c.id AS id, c.name AS text FROM Category c WHERE c.searchName IS NULL ORDER BY c.id")
-    List<SearchTextSource> findWithoutSearchText(Pageable pageable);
-
-    @Modifying
-    @Query("UPDATE Category c SET c.searchName = :searchText WHERE c.id = :id")
-    void setSearchText(@Param("id") Long id, @Param("searchText") String searchText);
 }
