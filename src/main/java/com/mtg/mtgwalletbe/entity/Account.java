@@ -38,7 +38,7 @@ public class Account extends Auditable {
     @Column(length = 50)
     private String name;
     // fold(name), kept in step on every write; searches match against this column (see SearchText)
-    @Column(length = 50)
+    @Column(length = 50, nullable = false)
     @Setter(AccessLevel.NONE)
     private String searchName;
     @NotNull
